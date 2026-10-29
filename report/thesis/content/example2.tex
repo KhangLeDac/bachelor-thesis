@@ -1,0 +1,56 @@
+\chapter{Chapter Title}\label{ch: ch2}%
+\lipsum[14]
+
+\section{Section Title}
+We define the bilinear form~$\mathcal{B}\colon H_0^1 (\Omega ) \times H_0^1(\Omega ) \rightarrow \mathbb{R}$ and the linear form~$\mathcal{L}\colon H_0^1(\Omega ) \rightarrow \mathbb{R}$ by 
+\begin{align}
+\mathcal{B} ( p , \phi ) &:= \int_\Omega \matr{K} \nabla p \cdot \nabla \phi \,\mathrm{d} V , \label{eq:Bprimal}\\
+\mathcal{L} (\phi ) &:= \int_\Omega q\phi \,\mathrm{d} V .
+\end{align}
+Then, we consider the following problem. 
+
+Find $p\in H_0^1 (\Omega )$ such that 
+\begin{align}
+\mathcal{B} (p, \phi ) = \mathcal{L} ( \phi ) \qquad \text{for all } \phi \in H_0^1 (\Omega ) . \label{eq:weak1}
+\end{align}
+
+\begin{prop}[Wellposedness of~\eqref{eq:weak1}] \label{prop:weak1}
+The problem~\eqref{eq:weak1} has a unique weak solution~$p\in H_0^1(\Omega )$.
+\end{prop}
+\begin{proof}
+Using the uniform ellipticity of~$\matr{K}$ and Poincaré's inequality, it is easy to see that the bilinear form~$\mathcal{B}$ from~\cref{eq:Bprimal} is continuous and coercive. Thus, the result follows from the Lax-Milgram theorem.  
+\end{proof}
+
+A simplified version of Babuška's theorem can be formulated as follows.
+\begin{thm}[Babuška~\cite{babuska71,aziz72}] \label{thm:babuska}
+Let $H$ be a real Hilbert space and $f \in H^\ast$. Further, let $\mathcal{A}\colon H \times H \rightarrow \mathbb{R}$ be a symmetric bilinear form such that there exist constants~$\alpha , \beta > 0$ with
+\begin{align}
+\abs{\mathcal{A}\left( v, w \right)} &\le \alpha \norm{v}\norm{w} &\text{(continuity)} \\
+\intertext{for all $v,w \in H$ and}
+\inf_{v \in H \setminus \{ 0 \} } \sup_{w\in H\setminus \{ 0 \}} \frac{\mathcal{A}\left( v,w\right)}{\norm{v}\norm{w}} &\ge \beta   &\text{(inf-sup stability).}
+\end{align}
+Then, there exists a unique element~$u\in H$ such that
+\begin{align}
+\mathcal{A} ( u, v ) &= \langle v, f \rangle_{H; H^\ast} \qquad \text{for all } v \in H.
+\end{align}
+\end{thm}
+For a proof and a more general version of \Cref{thm:babuska}, we refer to~\cite[Thm.\;5.2.1]{aziz72}.
+
+\section{Interesting Section Title} \label{sec:sec31}
+\lipsum[13]
+\begin{figure}[thb]
+\centering
+\begin{subfigure}{0.495\textwidth}
+\centering
+\textbf{\footnotesize{(a)}} \\
+\includegraphics[height=0.78\textwidth]{media/result_pressure.pdf}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.495\textwidth}
+\centering
+\textbf{\footnotesize{(b)}} \\
+\includegraphics[height=0.78\textwidth]{media/result_velocity.pdf}
+\end{subfigure}
+\caption[Full-dimensional numerical reference solution for the test problem in \Cref{sec:sec31}.]{Full-dimensional numerical reference solution for the test problem in \Cref{sec:sec31} with $d_0 = \smash{10^{-1}}$: \textbf{(a)}~pressure~$p$ and \textbf{(b)}~velocity~$-\matr{K}\nabla p$.}
+\label{fig: tang_sym}
+\end{figure}

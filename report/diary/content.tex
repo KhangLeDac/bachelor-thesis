@@ -1,0 +1,266 @@
+\section*{October}
+
+\section*{initial reading:}
+$Key \ Vocabulary$ \\
+Echo State Property:
+\begin{itemize}
+    \item reservoir's state is uniquely determined by the input history, not by the initial condition
+    \item $x(t+1) = f(x(t), u(t)) \ and \ \norm{x(t)-x'(t)} \rightarrow 0 \ as \ t \rightarrow \infty$
+\end{itemize}
+
+Fading Memory:
+\begin{itemize}
+    \item reservoir's current state depends only weakly on inputs from the distant past
+\end{itemize}
+
+Input Separability:
+\begin{itemize}
+    \item ability to discriminate between different input sequences $\to$ adapt behavior to problem
+\end{itemize}
+
+Partial Trace:
+\begin{itemize}
+    \item tracing out the degrees of freedom of a subsystem
+    \item $\rho_A = Tr_B(\rho_{AB})$ 
+    \item $\ \rho_{AB}\in \mathcal{H}_A \otimes \mathcal{H}_B, \ \mathcal{H}_A, \mathcal{H}_B$ are the Hilbert spaces of subsystems A and B, respectively.
+\end{itemize}
+
+$RC \ Properties$
+\begin{itemize}
+    \item Echo State Property
+    \item Fading Memory
+    \item Input Separability
+    \item fulfils all requirements $to$ universal
+\end{itemize}
+
+$Systems$ \\
+Quantum Systems:
+\begin{itemize}
+    \item transverse fiel Ising model
+\end{itemize}
+
+
+
+$Online Protocol$ 
+\begin{itemize}
+    \item Input and feedback encoding of data and measurements into quantum reservoir
+    \item  reservoir dynamics - system evolves under a definite quantum transformation
+    \item continuous measurement and preparation of the reservoir for the next step without reset
+\end{itemize}
+
+\section*{19.10}
+\textbf{Reading paper "Dissipation as a resource for QRC"}
+\begin{itemize}
+    \item engineered losses for each of the spin nodes $\to$ continuous dissipation
+    \item dissipation crucial for echo state property and fading memory
+    \item method: interactions with external environment under Marcovian conditions
+    \begin{itemize}
+        \item time evolution: Linbald master equation (GLKS) 
+        \begin{flalign*}
+            \dot{\rho} &= -i[H, \rho] + \sum_{j=1}^{N} \gamma_j
+            \left(L_j \rho L_j^{\dagger}
+            - \frac{1}{2}\{L_j^{\dagger}L_j, \rho\}\right) &&\\
+            &= (\mathcal{U}+\mathcal{D})\rho
+            \quad \text{with } \mathcal{U}\rho = -i[H, \rho]
+            \text{ and } \mathcal{D}\rho = \text{Lindbladian term} &&
+        \end{flalign*}
+
+        \item $L_i$: Jump operator, $\gamma_i$: dissipation rate
+        \item here $L_i = \sigma_i^- = \frac{1}{2}(\sigma_i^x - i\sigma_i^y)$
+    \end{itemize}
+    \item method: continuous dissipation (CD)
+    \begin{itemize}
+        \item new Hamiltonian $H'$ includes $h'(t) = h\cdot(s_k+1)$ $\to$ input signal dictates strength of of magnetic field to the x axis
+        \item reservoir dynamics: $\dot{\rho} = (-i[H'(h_k'), \rho]+\mathcal{D}_L)\rho$
+        \item uniform losses $\gamma_i = \gamma \forall i$
+        \item local dissipator $\mathcal{D}_L = \gamma \sum_{i=1}^{N} \sigma_i^- \rho \sigma_i^+ - \frac{1}{2}\{\sigma_i^+\sigma_i^-, \rho\}$ \\ 
+        $\to$ local because the chosen jump operators act on individual spins
+        \item update rule: $\rho_{k+1} = e^{\Delta t(\mathcal{U}(s_{k+1})+\mathcal{D}_L)}\rho_k$
+    \end{itemize}
+    \item this generator is universal
+    \item benchmark:
+    \begin{itemize}
+        \item tasks
+        \begin{itemize}
+            \item memory - short term memory, NARMA, parity check
+            \item forecasting - Mackey-Glass
+        \end{itemize}
+        \item readout layer: linear combination of expectation values of Pauli strings of lenght 1 and 2
+    \end{itemize}
+\end{itemize}
+
+\textbf{Reading paper "General theory of monitored QRC"}
+\begin{itemize}
+    \item develop general theory of monitored QRC based of indirect quantum measurements (weak, projective, partial, dissipative monitoring protocols)
+    \item quantum monitoring: extracting information from quantum system through sequential measurements
+    \item effect
+    \begin{itemize}
+        \item $E_m$ positive semidefinite 
+        \item $\sum_m E_m = I$ (POVM) 
+        \item $\operatorname{Pr}_\rho(m) = \operatorname{Tr}(E_m \rho)$
+        \item $[E_m, X] = 0 \forall m \to$ useful for extracting information about observable $X$. 
+    \end{itemize} 
+    \item back-action: instead of strict projecttion: measurement-induced state disturbance $\to$ captured by Kraus operators $\{\Omega_m\}$ with $\Omega_m^\dagger \Omega_m = E_m$, where $E_m$ has the role of a "projector".
+    \item measurement Map: $\mathcal{M}^{(m)}\rho = \frac{\Omega^\dagger \rho \Omega}{\operatorname{Pr}_\rho(m)}$
+    \item measurement record $\vct{m}_{k} = (m_1, m_2, \ldots, m_k)$
+    \item $\rho_k^{(m_1, m_2, \ldots, m_k)} = (\mathcal{M}^{(m_k)} \circ \Lambda_k) \rho_{k-1}^{(m_1, m_2, \ldots, m_{k-1})} $ with $\Lambda_k$: generig CTPT map describing the evolution of the system between measurements
+    \item Gerald-Naimark theorem: $\mathcal{M}$ can always be implemented as an indirect measurement: Unitary coupling between system of interest (S) and quantum probe (P) followed by projective measurement on the probe. 
+    \item Kraus representation of a CPTP map: \\ 
+    $\mathcal{M}\rho = \sum_m \operatorname{Pr}_\rho (m) \cdot \mathcal{M}^{(m)}\rho = \sum_m \Omega_m \rho \Omega_m^\dagger $ \\
+    $\to$ describes deterministic but irreversible dynamics
+    \begin{enumerate}
+        \item Depahsing measurement map: \\
+        coupling unitary - $U_{PS} = CNOT_{S,P}(RY(\theta)_P \otimes I_S)$ 
+        \item Amplitude damping measurement map \\
+        coupling unitary - $U_{PS} = CNOT_{S,P}CRY(\theta)_{S,P}$ \\
+        (controlled Y rotation)
+        \item Partial measurement map: \\
+        assign some of the units of a large system the role of the proble \\
+        $\Omega_{\vct{b}_m}^{PM} = \Omega_{b_1} \otimes ... \otimes \Omega_{b_n} \otimes I^{\otimes (N-N_P)}$
+    \end{enumerate}
+    \item quantum channel $\mathcal{T}(s_k)$ such that $\rho_k = \mathcal{T}(s_k) \circ ... \circ \mathcal{T}(s_{1}) \rho_o$
+    \item Learning task: weight matrix such that predicting sequence $\hat{\vct{y}}_k = \matr{W} \vct{x}_k$ minimizes loss to target sequence $\vct{y}_k$
+    \item online protocol:
+    \begin{itemize}
+        \item the QRC map $\mathcal{T}^{(m)}(s) = (\mathcal{M}^{(m)}\circ \Lambda) (s)$
+        \item feature vector: $x_{k,i} = \operatorname{Tr}[M_i\Lambda(s_k)\rho_{k-1}]$
+        \item ESP and FMD given if both $\mathcal{M} \circ \Lambda$ is contractive 
+        \item viable QRC map must be both stricty contractive and non-unital
+        \item Measurement back-action con provide contractivity and non-unitality: \\
+        Amplitude damping and partial projective measurements with reset work, Projective , dephasing and partial projective are unital 
+    \end{itemize}
+    \item uncertainty of observable mean values: projective measurements reach saturation faster, but weak measurements perform better in long term memory with sufficient shots
+    \item time multiplexing: multiple virtual nodes with measurements, increases feature space $\to$ amplifies information-disturbance trade off
+\end{itemize}
+
+
+\section*{20.10}
+\textbf{Call with Tobi}
+\begin{itemize}
+    \item discussion of the paper "General theory of monitored QRC"
+    \item for online protocol to work $\to$ only one observable (pauli z)
+    \item Programming Task: reproduce results of paper with online protocol (6 sping, half (3) control nodes)
+\end{itemize}
+
+\section*{21.10}
+
+\textbf{Understanding tobi's qrcspin.py file:} \\
+Idea:
+n qubit with random Ising type Hamiltonian, including dissipation
+
+Pipeline:
+\begin{enumerate}
+    \item encode data into hamiltonian via $\_generate\_field\_strength$ and build hamiltonian
+    \item Evolve: $qt.mesolve$ integrates Linblad master eq., $L_i = \sqrt{\gamma} \cdot \sigma_i^- $ ($\gamma$: dissipation rate )
+    \item Readout: expectation values, assumes 
+    \item Optional diagnostics: negativity entaglement and l1-coherence of $\rho$
+\end{enumerate}
+
+Dynamics of the system: See paper "Dissipation as a resource for QRC" 
+
+In simulation: Obtaining feature vector from $\rho$ does not collapse the state, as it is calculated exactly. 
+Instead, the finite-shot mode mimics the statistical noise (sampling limited number of outcomes)
+
+\textbf{Drafting plan for online protocol of the spin system:} \\
+Reservoir
+\begin{itemize}
+    \item 6 spins, 3 probe spins, 3 reservoir spins
+    \item System: $H'$ of "Dissipation as a resource for QRC" paper
+    \item time evolution: $qt.mesolve$ with Linblad master equation
+\end{itemize}
+
+Online Protocol
+\begin{itemize}
+    \item Observables: Full set of Z strings
+    \item Step: 1. Evolve, 2. Measure, 3. Reset probe spins (back-action), 4. Repeat
+\end{itemize}
+
+
+\section*{23.10}
+Built the class $OnlineSpinQRC$ and  the test file $test\_online\_spin\_qrc.py$. \\
+The class was built based on the class $SpinQRC$ but rewritten. It must still be adapted to 
+
+\section*{24.10}
+Summary of the Class $OnlineSpinQRC$:\\
+
+\textbf{init:}\\
+Important parameters:
+\begin{itemize}
+    \item model: choose "TiltedTFIM" (encoding in x direction)
+    \item encoding method: chose "uniform" (for encoding method of "Dissipation as a resource for QRC" paper)
+    \item $\theta := \pi \to$ projective measurement (back action is more generally implemented as a rotation)
+    \item damping on: ?
+    \item decay to: ? 
+\end{itemize}
+
+Initialization of basic operators:
+\begin{itemize}
+    \item $\sigma_i^x, \sigma_i^z, P0_i, P1_i, E01_i $
+    \item combined with the following method for operator "X": \\
+    \begin{lstlisting}
+    self.X_ops = [self._build_operator(qt.X(), i) for i in range(n)]
+    \end{lstlisting}
+    $\to$ $[X_1 \otimes I_2 \otimes ... \otimes I_n, \ I_1 \otimes X_2 \otimes ... \otimes I_n, \ ... ]$
+\end{itemize}
+
+Random Number Generator:
+\begin{itemize}
+    \item needs to be explained
+\end{itemize}
+
+Shots:
+\begin{itemize}
+    \item needs to be explained
+\end{itemize}
+
+\textbf{run:}
+running the class
+\begin{enumerate}
+    \item implement policy
+    \item run the online protocol: change $\gamma_k, \theta_k$ for each step given the policy and perform an evolution step
+    \item return the features
+\end{enumerate}
+
+\textbf{step:}
+performing a single step of the online protocol
+\begin{enumerate}
+    \item evolve $\rho$ for given $\gamma_k$ and $s_k$
+    \item obtain features $\to$ how does feature function work?
+    \item measure and reset: apply the back action via the Kraus operators for given $\theta_k$
+\end{enumerate}
+
+OnlineSpinQRC.evolve():
+\begin{itemize}
+    \item contruct Hamiltonian
+    \item Linblad evolution via $qt.mesolve$
+\end{itemize}
+
+OnlineSpinQRC.features():
+\begin{itemize}
+    \item how does this work?
+\end{itemize}
+
+OnlineSpinQRC.measureandreset():
+\begin{itemize}
+    \item back action on every probe: $\rho \to \sum K0_i \rho K0_i^\dagger = K0 \rho K0^\dagger + K1 \rho K1^\dagger$
+    \item if ground state $\to$ let unchanged, if excited state $\to$ rotate back to ground state by angle $\theta_k \to U_{SA} = CRY(\theta_k){A,S} \cdot CNOT{S,A}$ (with additional purely logical auxillary qubit)
+    \item $\to$ corresponding Kraus operators: $K0 = P0$ and $K1 = \cos(\theta)P1 + \sin(\theta)E01$
+    \item literature?
+\end{itemize}
+
+tasks left for understanding:
+\begin{itemize}
+    \item understand dampingon and decay
+    \item understand the feature function and the shot system
+    \item look for literature for the back action
+\end{itemize}
+
+new tasks
+\begin{itemize}
+    \item unit tests
+    \item test, if it implements the online protocol and the reservoir correctly
+    \item prepare a read me for tobi
+\end{itemize}
+
+\section*{27.10}
+Meeting with tobi - discussed the paper, delete unesccessary functionalities from the class

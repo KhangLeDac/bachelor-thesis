@@ -1,0 +1,98 @@
+\chapter{Bias Reaction with constructed CV}\label{ch: ch5}%
+
+The results from \cref{ch: ch.4.4.3} show that when a reaction happens, it can be observed in the PCA space.  
+What remains is to see, whether the PCA space is suitable to drive a simulation to replicate the reaction. 
+
+In this chapter, the constructed CV $CV\_dist$ (see \ref{eq: constructed_CV}) was used to drive a MetaD MD simulation.
+The MD was analyzed and compared to the chemical reaction.
+
+\section{MD Parameters}
+For this chapter, the parameters of the MD remained the same for every MD:
+
+\begin{itemize}
+    \item ASEMD
+    \item Temperature: 300 K
+    \item $(N,V,T)$-Ensemble
+    \item Thermostat: Langevin with friction coefficient of 0.01 $1/{\text{fs}}$
+    \item MLIP: MACE-MPA-0
+    \item Simulated time: 0.5 ns with a time step of 0.5 fs
+\end{itemize}
+
+However, the MetaD parameters changed for every MD.
+
+\section{MD Progression} \label{ch: ch.5.2}
+Initially, fine-tuning of the MetaD parameters was necessary to find a set of parameters that can drive the MD to replicate the reaction.
+During this process, multiple MDs were run with different MetaD parameters.
+Some of the MDs were successful in replicating the reaction, others failed e.g. by staying in the reactants state, being stuck in the transition state or destroying the molecules during the MD.
+In the following, the parameters below were found to be suitable to drive the MD to replicate the reaction.
+This MD was analyzed in the following sections.
+
+\subsection{MetaD Parameters} 
+The chosen MD was run with the following parameters:
+\begin{itemize}
+    \item Pace: 1000 fs 
+    \item Height: 0.025 eV
+    \item Sigma: 0.05
+    \item Bias: 0
+\end{itemize}
+
+Those parameters were chosen as their values were similar to the parameters used in \cref{ch: ch.4.4.2} to drive the MD with the handcrafted CVs. 
+After testing multiple runs, it was found that the MD replicated the reaction more successfully without a bias and thus, normal MetaD was used for the MD.
+
+\subsection{CVs over time}
+While running the MD, the values of $CV\_dist$, $CN\_attack\_group$ and $CN\_leaving$ were computed and saved.
+In Figure \ref{fig: constructed_cvs}, these values are plottet over the time:
+
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/constructed_cvs_4.png}
+    \caption{Values of $CV\_dist$, $CN\_attack\_group$ and $CN\_leaving$ over time during the MD driven by $CV\_dist$.\\
+    From the graphs, the reactants state [1], the transition state [2] and the products state [3] can be identified.}
+    \label{fig: constructed_cvs}
+\end{figure}
+
+Here, $CN\_attack\_group$ starts at 0 and $CN\_leaving$ at 1, indicating the reactants state.
+Then, after $\approx$ 90 ps, the value of $CV\_dist$ drops down close to 0 and simultaneously, $CN\_attack\_group$ goes to 1 while $CN\_leaving$ stays at 1.
+From that time on, the system is in the transition state.
+After some time, at $\approx$ 180 ps, $CN\_leaving$ goes down to 0 indicating a successful replication of the reaction
+
+\subsection{Reaction in PCA Space}
+Next, the MD is analyzed in the PCA space by projecting all frames from 0 ps to 250 ps to the PCA space, just like in Figure \ref{fig: example_pca_plot} 
+The result is shown in Figure \ref{fig: constructed_cv_pca_plot}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/constructed_cv_pca_plot.png}
+    \caption{Projection of the MD driven by $CV\_dist$ onto the PCA Space. The colour indicates the time progression.}
+    \label{fig: constructed_cv_pca_plot}
+\end{figure}
+
+
+
+Once again, the MD starts at the reactants cluster.
+After $\approx$ 90 ps the system moves towards the products cluster and at $\approx$ 180 ps, it reaches the products cluster and stays there.
+
+\subsection{Reaction Analysis}
+To finally confirm, that the reaction has successfully happened, the MD was also visualized and observed in ZnDraw.
+The snapshots can be found in the appendix in \cref{ch: chB}. \\
+
+In the visualization of the MD, it was observed that the reaction happened successfully.
+From the reactants state, the system goes to the transition state and then to the products state, where it remains until the end of the MD.
+Furthermore, the MD driven by $CV\_dist$ even showed more accurate details of the reaction mechanism.
+First, a water assisted nucleophilic attack happened. To get to the transition state, rather than the hydroxide approaching the ester group, 
+a water molecule approched the ester group and the nearby hydroxide ion removed one proton from the water molecule enabling it to bind with the ester group.
+Moreover, when the system went from the transitional phase to the products state, the tetrahedral form of the transition state went to the planar form of the products state instantaneously, which is also consistent with the expected theoretical reaction mechanism \cite{Clayden2012}.
+
+\newpage
+
+\section{MetaD Parameters Dependence}
+
+To asses the effectiveness of the constructed CV, multiple MDs with different MetaD parameters were run.
+Even though a statistical analysis of the parameters dependence was omitted, it can be observed that the choice of the MetaD parameters significantly affects the outcome of the MD.
+A couple of MDs with different parameters are shown in the appendix in \cref{ch: chC}. \\
+However, the dependence of the MD outcome of the MetaD parameters is well known and typical for MetaD MDs \cite{Laio2008}.
+This means, that even though the MD driven by the constructed CV was sensitive to the choice of the MetaD parameters, it does not necessarily mean that the constructed CV is not suitable to replicate the reaction.
+
+
+
+

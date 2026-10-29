@@ -1,0 +1,67 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatletter
+\@ifpackageloaded{babel}
+{
+\addto\extrasamerican{
+\renewcommand*{\figureautorefname}{Figure}
+\renewcommand*{\tableautorefname}{Table}
+\renewcommand*{\partautorefname}{Part}
+\renewcommand*{\chapterautorefname}{Chapter}
+\renewcommand*{\sectionautorefname}{Section}
+\renewcommand*{\subsectionautorefname}{Section}
+\renewcommand*{\subsubsectionautorefname}{Section}
+}
+\addto\extrasngerman{
+\renewcommand*{\paragraphautorefname}{Absatz}
+\renewcommand*{\subparagraphautorefname}{Unterabsatz}
+\renewcommand*{\footnoteautorefname}{Fu\"snote}
+\renewcommand*{\FancyVerbLineautorefname}{Zeile}
+\renewcommand*{\theoremautorefname}{Theorem}
+\renewcommand*{\appendixautorefname}{Anhang}
+\renewcommand*{\equationautorefname}{Gleichung}
+\renewcommand*{\itemautorefname}{Punkt}
+}
+\providecommand{\subfigureautorefname}{\figureautorefname} 
+}{\relax}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HYPERREF
+
+\hypersetup{
+% PDF file meta-information
+pdftitle={\myTitle},
+pdfauthor={\textcopyright\ \myName, \myUni, \myDepartment},
+pdfsubject={},
+pdfkeywords={},
+pdfcreator={pdfLaTeX},
+pdfproducer={LaTeX}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BIBLATEX
+
+\renewcommand*{\bibfont}{\footnotesize}
+
+\renewbibmacro*{volume+number+eid}{%
+  \printfield{volume}%
+%  \setunit*{\adddot}% DELETED
+  \setunit*{\addnbthinspace}% NEW (optional); there's also \addnbspace
+  \printfield{number}%
+  \setunit{\addcomma\space}%
+  \printfield{eid}}
+\DeclareFieldFormat[article]{number}{\mkbibparens{#1}}
+
+% remove Oxford comma in bibliography
+%\renewcommand*{\finalnamedelim}{\addspace \bibstring {and}\space}
+
+% link title to doi in bibliography
+\ExecuteBibliographyOptions{doi=false}
+\ExecuteBibliographyOptions{url=false}
+\newbibmacro{string+doi}[1]{%
+  \iffieldundef{doi}{ \iffieldundef{url}{#1}{\href{\thefield{url}}{#1}}}{\href{http://dx.doi.org/\thefield{doi}}{#1}}}
+\DeclareFieldFormat{title}{\usebibmacro{string+doi}{\mkbibemph{#1}}}
+\DeclareFieldFormat[article,inbook,incollection,inproceedings,patent,thesis,unpublished]{title}{\usebibmacro{string+doi}{\mkbibquote{#1\isdot}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -29,3 +29,23 @@ Thumbs.db
 
 # Logs
 *.log
+
+# LaTeX build output (report/)
+*.aux
+*.bbl
+*.bbl-SAVE-ERROR
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+report/thesis/thesis.pdf
+report/diary/diary.pdf
+
+# Third-party papers (copyright, large binaries)
+literature/**/*.pdf

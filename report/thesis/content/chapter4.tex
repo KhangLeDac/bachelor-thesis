@@ -1,0 +1,228 @@
+\chapter{Simulation of the Saponification Reaction}\label{ch: ch4}
+In this chapter, the proposed method is tested on the saponification reaction of methyl acetate yielding methanol and acetate ion:
+\[
+    \ce{CH3COOCH3 + OH^- <-> CH3COO^- + CH3OH}
+\]
+First, the PCA is performed on the combined dataset of reactants and products.
+Then the saponification reaction is simulated with handcrafted CVs that are proven to be able to replicate the reaction mechanism.
+During the simulation, its frames are observed in the PCA space to validate that the PCA space can capture the reaction progress.
+
+
+\section{Setup of Boxes}\label{ch: ch4.1}
+2 boxes are set up, one for the reactants and one for the products.
+In each box, one molecule of the respective species is placed, and the rest is filled with water molecules in order to dilute the box.
+Furthermore, PBC is applied to both of the boxes.
+
+\begin{table}[h]
+    \centering
+    \caption{Composition of the simulation boxes.}
+    \label{tab:boxes_overview}
+    \begin{tabularx}{0.9\textwidth}{lXX}
+        \hline
+        \textbf{Box} & \textbf{Reactants Box} & \textbf{Products Box} \\
+        \hline
+        Molecules & 1 molecule of methyl acetate; & 1 molecule of acetate ion; \\
+        & 1 molecule of hydroxide ion & \raggedright\arraybackslash 1 molecule of methanol \\
+        Solvent & 16 molecules of water & 16 molecules of water \\
+        Density & 1 $g/cm^3$ & 1 $g/cm^3$ \\
+        \hline
+    \end{tabularx}
+\end{table}
+
+Although the boxes are strongly alkaline due to the excess negative charge, it does not affect the simulation of the chemical reaction significantly, 
+because MLIPs do not require explicit system charges as inputs and usually do not include long-range electrostatic interactions in their predictions, which is also the case for the MLIP used for this project thesis (MACE-MPA-0) \cite{Jacobs2025}\cite{Anstine2023}\cite{batatia2024foundation}.
+
+\FloatBarrier
+\section{MD of Reactants and Products Boxes}
+To setup the MDs, the IPSuite framework was used \cite{Zills2024}.
+Initially, the boxes are created according to the specifications in \cref{ch: ch4.1} using the tool MultiPackmol \cite{martinez2009packmol}.
+The boxes are first relaxed utilizing the optimizer method FIRE \cite{bitzek2006structural} with a maximum force of 0.1 $\text{eV}/\mathring{A}$. \\
+Next, the MDs for the reactants and products boxes are run using the tool ASEMD from IPSuite, an interface for running MDs with the Atomic Simulation Environment (ASE)\cite{ASE2017}.
+The following parameters were chosen: 
+
+\begin{itemize}
+    \item Temperature: 300 K
+    \item $(N,V,T)$-Ensemble
+    \item Thermostat: Langevin with friction coefficient of 0.01 $1/{\text{fs}}$
+    \item MLIP: MACE-MPA-0
+    \item simulated time: 0.5 ns with a time step of 0.5 fs
+\end{itemize}
+
+\section{PCA results}
+After running the MDs, 1000 frames are chosen randomly from each MD and the PCA is performed on the combined dataset of reactants and products with 2 principal components.
+The PCA plot is shown in Figure \ref{fig: PCA_Plot}. 
+It can be observed that the reactants and products form two clusters in the PCA space. 
+However, the clusters are not distinctly separated.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/pca_plot_300K.png}
+    \caption{PCA of the reactants and products for 2 principal components.\\ 
+    The numerical values of the principal components are not relevant, as their construction is mathematically abstract.
+    Thus, the qualitative analysis is emphasized here.}
+    \label{fig: PCA_Plot}
+\end{figure}
+
+To address this issue, the calculation of the global descriptor is modified by removing the hydrogen atoms from the computation of the global descriptor:
+\begin{align}
+    \vct{G}_i = \frac{1}{N_{\text{atoms}}-N_{H}} \sum_{\substack{i: \ \text{non-H atoms}}} \vct{G_{i}^{(j)}} \quad \text{with } \dim(\vct{G}_i) = N_{\text{features}}
+\end{align}
+In atomistic machine learning, it is a known phenomenon that the explicit inclusion of hydrogen atoms can introduce high-frequency structural noise, which often degrades the performance of the underlying representations without fundamentally improving the quality of the essential structural features \cite{SiMGen2024}. 
+In the context of this saponification reaction, 
+the numerous hydrogen atoms of the water molecules undergo fast thermal fluctuations that behave similarly in both the reactants and products boxes,
+which should not be included when capturing the essential dynamics. 
+
+The PCA is performed again with the modified global descriptor, and the PCA plot is shown in Figure \ref{fig: PCA_Plot_noH}.
+Here, the clusters are clearly separated.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/pca_plot_300K_noH.png}
+    \caption{PCA of the reactants and products for 2 principal components with the hydrogen atoms removed from the global descriptor.}
+    \label{fig: PCA_Plot_noH}
+\end{figure}
+
+This result is advantageous for the proposed method as the reactants state and the products state are distinctly separated in the PCA Space.
+Thus, the global descriptor is calculated without the hydrogen atoms in the subsequent simulations.
+
+
+\section{MD of the chemical Reaction}
+
+Next, the chemical reaction is simulated by driving a MetaD MD with handcrafted CVs.
+
+\subsection{Reaction Mechanism}
+To understand, how to bias the reaction, the reaction mechanism is first discussed broadly. The reaction mechanism is illustrated in Figure \ref{fig: reaction_mechanism}.
+\begin{figure} [h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/reaction_mechanism.png}
+    \caption{Illustration of the reaction mechanism. Source: \cite{wiki:verseifung}}
+    \label{fig: reaction_mechanism}
+\end{figure}
+
+
+At the beginning of the reaction, the system is in the reactants state with the methyl acetate and the hydroxide ion.
+In the first step, the negatively charged hydroxide ions approaches the ester group and attacks the central carbon atom.
+The formation of this new bond results in a transition state: A so-called tetrahedral intermediate.
+In this transition state, the carbon atom is bonded to three oxygen atoms.
+Then, the alkoxide group (in this case methoxide) is cleaved from the carbon atom and leaves the molecule at last. \cite{Mortimer2003}
+
+From the reaction mechanism, two suitable indicators of the progress of the reaction can be deduced (see Figure \ref{fig: reaction_indicators}):
+\begin{enumerate}
+    \item The oxygen atom from the hydroxide ion approaches the carbon atom from the ester group.
+    \item The oxygen atom from the alkoxide group leaves the carbon atom from the ester group.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/reaction_indicators.png}
+    \caption{Indicators of the  of the reaction progress. \\
+    Blue: Hydroxide approaching carbon.  \\
+    Orange: Alkoxide leaving carbon.}
+    \label{fig: reaction_indicators}
+\end{figure}
+
+However, calculating absolute distances is unsuitable as a CV due to the reactive nature of the solvent. 
+The hydroxide ion can react with other water molecules and thus the oxygen atom corresponding to the hydroxide atom can change \cite{marx2010aqueous}\cite{batatia2024foundation}.
+Therefore, Coordination Numbers (CNs) are commonly used as CVs instead of specific distances \cite{Laio2008}. 
+The computation of CNs is discussed in Section \ref{ch: ch2.2.3}.
+
+\newpage
+
+To bias the reaction, two handcrafted CVs are created based on the CNs. 
+The following CNs are implemented and illustrated in Figure \ref{fig: CN_illustration}:
+\begin{enumerate}
+    \item $CN\_attack\_group$: All oxygen atoms that are not bound to a carbon atom are tracked, meaning all oxygen atoms that belong to a water molecule or the hydroxide ion.
+    \item $CN\_leaving$: The oxygen atom that belongs to the alkoxide group is tracked.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/CN_illustration.png}
+    \caption{Illustration of the CNs. \\
+    The carbon atom of the ester group is fixed and a ball with cutoff radius $r_{cut}$ is placed around it. \\
+    Blue: Tracked atoms for $CN\_attack\_group$. \\
+    Orange: Tracked atom for $CN\_leaving$.}
+    \label{fig: CN_illustration}
+\end{figure}
+The custom variables are implemented and evaluated on-the-fly using the PyCV \cite{Giorgino2019} module from the hillclimber package, while the enhanced sampling and bias application are driven by open-source, community-developed PLUMED library \cite{plumed2014}\cite{plumed2019}.
+
+\subsection{MD Parameters}\label{ch: ch.4.4.2}
+
+The reaction was simulated with the IPSuite tool ASEMD with the following parameters:
+
+\begin{itemize}
+    \item Temperature: 300 K
+    \item $(N,V,T)$-Ensemble
+    \item Thermostat: Langevin with friction coefficient of 0.01 $1/{\text{fs}}$
+    \item MLIP: MACE-MPA-0
+    \item Simulated time: 0.5 ns with a time step of 0.5 fs
+\end{itemize}
+
+\newpage
+
+To recreate the reaction, MetaD was used. The following MetaD parameters were chosen:
+
+\begin{itemize}
+    \item Pace: 2000 fs 
+    \item Height: 0.25 eV
+    \item  Sigma: 0.1 ($CN\_attack\_group$); 0.05 ($CN\_leaving$)
+    \item Bias: 5 ($\to$ well-tempered MetaD)
+\end{itemize}
+
+\subsection{CNs during reaction}\label{ch: ch.4.4.3}
+
+During the MD, the values of the CNs were computed and saved for every time frame.
+Now, the values of the CNs are plotted over time in Figure \ref{fig: handcrafted_cvs}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/handcrafted_cvs.png}
+    \caption{Values of the CNs over time. \\
+    Blue: $CN\_attack\_group$ \\
+    Orange: $CN\_leaving$ \\
+    From the graphs, the reactants state [1], the transition state [2] and the products state [3] can be identified.}
+    \label{fig: handcrafted_cvs}
+\end{figure}
+
+Initially, the value of $CN\_attack\_group$ starts at $\approx$ 0.
+After $\approx$ 290 ps, the value of $CN\_attack\_group$ jumps up to $\approx$ 1 and afterwards it fluctuates but essentially stays at that level.
+Meanwhile, the value of $CN\_leaving$ behaves inverted.
+It starts at $\approx$ 1, drops down to $\approx$ 0 after $CN\_attack\_group$ went up and stays there. 
+
+From that, it can be concluded that the reaction has sucessfully happened: \\
+The state [1] in Figure \ref{fig: handcrafted_cvs} can be identified as the reactants state as the ester group is close to the central carbon atom while the hydroxide group is far away.
+During state [2], there is a short time window, where both $CN\_attack\_group$ and $CN\_leaving$ have a value of $\approx$ 1.
+This indicates, that the system has been in the transition state for that short time. 
+Finally, the state [3] represents the products state, where the ester group detached from the the central carbon atom and the hydroxide group has attached to it.
+
+To confirm these statements, the visualization tool ZnDraw was used and the screenshots confirming the statements can be found in the appendix in \cref{ch: chA}.
+
+\subsection{Constructed CV during reaction} \label{ch: ch.4.4.4}
+In \cref{ch: ch.4.4.3}, it can be observed through the CNs that the handcrafted CVs can bias the MD such that a successful reaction happens.
+Next, the PCA Space is observed during the MD to demonstrate that it is able to capture the reaction progress.
+
+\subsubsection{Reaction in PCA Space}
+To examine a frame of the MD in the PCA space, its global descriptor is projected to the PCA space, just like in Figure \ref{fig: example_pca_plot}.
+It is anticipated that initial projections of the MD land in the reactants cluster and with time progression, the system is projected closer to the products cluster until it reaches it and then stays there.
+To confirm this, the frames from 270 ps to 330 ps were projected on the PCA space and plotted on the plot where the PCA was performed (see Figure \ref{fig: PCA_Plot_noH}).
+The result is shown in Figure \ref{fig: handcrafted_cvs_frames_on_pca}. In the figure, it can be observed that the frames of the MD behave as expected.
+Initially, the frames are projected in the reactants cluster, then they move towards the products cluster and at $\approx$ 290 ps, they reach the products cluster and stay there. \\
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/handcrafted_cvs_frames_on_pca.png}
+    \caption{Projection of the frames of the MD on the PCA space. The colour indicates the time progression.}
+    \label{fig: handcrafted_cvs_frames_on_pca}
+\end{figure}
+
+\newpage
+
+\subsubsection{Constructed CV over time during Reaction}
+Additionally, the distance of every frame to the midpoint of the reactants cluster and the products cluster was computed and plottet in Figure \ref{fig: handcrafted_cvs_dist_time}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{media/chapter_4/handcrafted_cvs_dist_time.png}
+    \caption{Distance of frames to the midpoints of the reactants and products clusters over time during the MD of the chemical reaction. \\
+    Blue: Distance to the midpoint of the reactants cluster. \\
+    Orange: Distance to the midpoint of the products cluster.}
+    \label{fig: handcrafted_cvs_dist_time}
+\end{figure}
+Here again, the distance from the frame to the midpoint of the products cluster starts high at $\approx$ 0.3 and goes to a $\approx$ 0 at $\approx$ 290 ps while the distance to the midpoint of the reactants cluster behaves inversely.

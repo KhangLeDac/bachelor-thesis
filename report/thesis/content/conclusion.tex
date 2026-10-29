@@ -1,0 +1,24 @@
+\phantomsection
+\addcontentsline{toc}{chapter}{Conclusion}
+\markboth{Conclusion}{Conclusion}
+\chapter*{Conclusion}%
+
+In this project thesis, the development and application of system-independent CVs using PCA were successfully demonstrated. 
+By reducing the dimensionality of global atomic descriptors, a data-driven CV was constructed and applied to the saponification reaction. 
+The results confirm that the reaction can be successfully replicated for this system using the PCA-based approach. 
+The constructed CV effectively guided the MetaD simulation from the reactants to the products, capturing the essential transition states and complex mechanistic details, such as the water-assisted nucleophilic attack.
+
+Despite these promising results, certain limitations were observed during the evaluation. 
+The success of the driven simulations showed a noticeable dependence on the chosen MetaD parameters. 
+While this parameter dependence is a normal characteristic of enhanced sampling techniques \cite{Laio2008}, 
+it emphasizes that a comprehensive statistical analysis is required in future studies to determine the optimal simulation settings. 
+Furthermore, the reconstructed FES derived from the bias potential was found to be inaccurate. 
+
+Additionally, it was noted that the pre-trained MACE-MP-0 model is not the ideal MLIP for this specific use case.
+Furthermore, it is important to remark that PCA is a linear dimensionality reduction method \cite{Jolliffe2002}. 
+Since the true reaction path in the high dimensional descriptor space is highly likely to be non-linear, 
+reducing it to a single dimension via one CV is a significant simplification.
+Remarkably, despite these methodological simplifications and the suboptimal model choice, the approach remained effective and successfully drove the chemical reaction. 
+This outcome could be an indication of the possible robustness and flexibility of the PCA-based CV construction. 
+Overall, the proposed method provides a potentially highly capable, purely mathematical framework for reaction path analysis. 
+

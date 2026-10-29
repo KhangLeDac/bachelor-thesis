@@ -1,0 +1,97 @@
+\chapter{Interesting Chapter Title}\label{ch: ch1}%
+\lipsum[9]
+
+
+\section{Interesting Section Title} \label{sec:sec1}
+The fluid flow in $\Omega_\mathrm{P}$ is described by the Stokes equations
+\begin{subequations}
+\begin{alignat}{2}
+-\mu \Delta  \vct{v} +\nabla \pi &=  \rho \vct{g} \qquad &&\text{in } \Omega_\mathrm{P} , \label{eq:stokesmomentum}\\
+\nabla \cdot \vct{v} &= q \qquad &&\text{in } \Omega_\mathrm{P} , \label{eq:stokesmass}\\
+\vct{v} &= 0 \qquad &&\text{on } \partial \Omega_\mathrm{P} \setminus \partial \Omega ,\label{eq:stokesnoslip}
+\end{alignat}%
+\label{eq:stokes}%
+\end{subequations}
+where $\pi\colon \Omega_\mathrm{P} \rightarrow \mathbb{R}$ denotes the pressure function and~$\vct{v}\colon \Omega_\mathrm{P} \rightarrow \mathbb{R}^n$ is the velocity field of the fluid. 
+Further, in \cref{eq:stokes}, $q$ is a source density and $\vct{g}$ indicates the gravitational vector. 
+\Cref{eq:stokesmomentum} is a momentum balance equation, while \cref{eq:stokesmass} is a mass balance equation.
+Besides, at the internal boundaries~$\partial \Omega_\mathrm{P} \setminus \partial \Omega$, the no-slip condition~\eqref{eq:stokesnoslip} is imposed.
+The Stokes system~\eqref{eq:stokes} is to be completed by an appropriate boundary condition at the external domain boundary~$\partial \Omega_\mathrm{P} \cap \partial \Omega $.
+
+\subsection{Interesting Subsection Title} \label{sec:sec11}
+\lipsum[10]
+\begin{defi} \label{def:selfaffinity}
+A (deterministic) function~$z \colon \Omega \rightarrow \mathbb{R}$ with $\Omega \subset \mathbb{R}^n$ is called self-affine with Hurst or roughness exponent~$H>0$ if 
+\begin{align}
+z(\lambda \vct{x} ) = \lambda^H z(\vct{x} )
+\end{align} 
+for all~$\lambda > 0$ and $\vct{x} \in \Omega$ with $\lambda \vct{x} \in \Omega$.
+\end{defi}
+\begin{ex} \label{ex:fractal}
+We illustrate the definition of a self-affine function with a simple example. 
+\lipsum[7]
+\end{ex}
+\begin{figure}[t]
+\colorlet{lightgray}{black!20}
+\centering
+\begin{subfigure}{0.49\textwidth}
+\centering
+\begin{tikzpicture}
+\tikzmath{ \r = 4; \h = 2;}
+\draw[xstep=\r,ystep=\h,lightgray,thin] (0,0) grid (\r, \h);
+\draw[thick] (0,0) -- (\r,\h);
+\node (a) at (-0.4, 0.5*\h) {\footnotesize{\textbf{(a)}}};
+\end{tikzpicture}
+\end{subfigure} 
+\begin{subfigure}{0.49\textwidth}
+\centering
+\begin{tikzpicture}
+\tikzmath{ \r = 1; \h = 1;}
+\draw[xstep=0.25*\r,ystep=0.5*\h,lightgray,thin] (0,0) grid (4*\r, 2*\h);
+\draw[thick] (0,0) -- (0.25*\r, 0.5*\h) -- (0.5*\r, 0) -- (\r,\h);
+\draw[thick] (0 + \r,\h) -- (0.5*\r + \r, 0) -- (0.75*\r + \r, 0.5*\h) -- (\r + \r,0);
+\draw[thick] (0 + 2*\r,0) -- (0.25*\r + 2*\r, 0.5*\h) -- (0.5*\r + 2*\r, 0) -- (\r + 2*\r,\h);
+\draw[thick] (0 + 3*\r,0 +\h) -- (0.25*\r + 3*\r, 0.5*\h +\h) -- (0.5*\r + 3*\r, 0 + \h) -- (\r + 3*\r,\h + \h);
+\node (c) at (-0.4, \h) {\footnotesize{\textbf{(c)}}};
+\end{tikzpicture}
+\end{subfigure} \\[6pt] 
+\begin{subfigure}{0.49\textwidth}
+\centering
+\begin{tikzpicture}
+\tikzmath{ \r = 4; \h = 2;}
+\draw[xstep=0.25*\r,ystep=0.5*\h,lightgray,thin] (0,0) grid (\r, \h);
+\draw[thick] (0,0) -- (0.25*\r, 0.5*\h) -- (0.5*\r, 0) -- (\r,\h);
+\node (b) at (-0.4, 0.5*\h) {\footnotesize{\textbf{(b)}}};
+\end{tikzpicture}
+\end{subfigure} 
+\begin{subfigure}{0.49\textwidth}
+\centering
+\begin{tikzpicture}
+\tikzmath{ \r = 0.25; \h = 0.5;}
+\draw[xstep=0.25*\r,ystep=0.5*\h,lightgray,thin] (0,0) grid (16*\r, 4*\h);
+\draw[thick] (0,0) -- (0.25*\r, 0.5*\h) -- (0.5*\r, 0) -- (\r,\h);
+\draw[thick] (0 + \r,\h) -- (0.5*\r + \r, 0) -- (0.75*\r + \r, 0.5*\h) -- (\r + \r,0);
+\draw[thick] (0 + 2*\r,0) -- (0.25*\r + 2*\r, 0.5*\h) -- (0.5*\r + 2*\r, 0) -- (\r + 2*\r,\h);
+\draw[thick] (0 + 3*\r,0 +\h) -- (0.25*\r + 3*\r, 0.5*\h +\h) -- (0.5*\r + 3*\r, 0 + \h) -- (\r + 3*\r,\h + \h);
+
+\draw[thick] (0 + 4*\r,\h + \h) -- (0.5*\r + 4*\r, 0 + \h) -- (0.75*\r + 4*\r, 0.5*\h + \h) -- (\r + 4*\r,0 + \h);
+\draw[thick] (0 + 5*\r,\h) -- (0.5*\r + 5*\r, 0) -- (0.75*\r + 5*\r, 0.5*\h) -- (\r + 5*\r,0);
+\draw[thick] (0 + 6*\r,0) -- (0.25*\r + 6*\r, 0.5*\h) -- (0.5*\r + 6*\r, 0) -- (\r + 6*\r,\h);
+\draw[thick] (0 + 7*\r,\h) -- (0.5*\r + 7*\r, 0) -- (0.75*\r + 7*\r, 0.5*\h) -- (\r + 7*\r,0);
+
+\draw[thick] (0 + 8*\r,0) -- (0.25*\r + 8*\r, 0.5*\h) -- (0.5*\r + 8*\r, 0) -- (\r + 8*\r,\h);
+\draw[thick] (0 + 9*\r,\h) -- (0.5*\r + 9*\r, 0) -- (0.75*\r + 9*\r, 0.5*\h) -- (\r + 9*\r,0);
+\draw[thick] (0 + 10*\r,0) -- (0.25*\r + 10*\r, 0.5*\h) -- (0.5*\r + 10*\r, 0) -- (\r + 10*\r,\h);
+\draw[thick] (0 + 11*\r,0 +\h) -- (0.25*\r + 11*\r, 0.5*\h +\h) -- (0.5*\r + 11*\r, 0 + \h) -- (\r + 11*\r,\h + \h);
+
+\draw[thick] (0 + 12*\r,0 + 2*\h) -- (0.25*\r + 12*\r, 0.5*\h + 2*\h) -- (0.5*\r + 12*\r, 0 + 2*\h) -- (\r + 12*\r,\h + 2*\h);
+\draw[thick] (0 + 13*\r,\h + 2*\h) -- (0.5*\r + 13*\r, 0 + 2*\h) -- (0.75*\r + 13*\r, 0.5*\h + 2*\h) -- (\r + 13*\r,0 + 2*\h);
+\draw[thick] (0 + 14*\r,0 + 2*\h) -- (0.25*\r + 14*\r, 0.5*\h + 2*\h) -- (0.5*\r + 14*\r, 0 + 2*\h) -- (\r + 14*\r,\h + 2*\h);
+\draw[thick] (0 + 15*\r,0 + 3*\h) -- (0.25*\r + 15*\r, 0.5*\h + 3*\h) -- (0.5*\r + 15*\r, 0 + 3*\h) -- (\r + 15*\r,\h + 3*\h);
+
+\node (d) at (-0.4, 2*\h) {\footnotesize{\textbf{(d)}}};
+\end{tikzpicture}
+\end{subfigure}
+\caption[Recursive construction of the self-affine function in \Cref{ex:fractal}.]{Recursive construction of the self-affine function in \Cref{ex:fractal}: \textbf{(a)} initial configuration, \textbf{(b)} first step, \textbf{(c)} second step, \textbf{(d)} third step.}
+\label{fig: fractal}
+\end{figure}%

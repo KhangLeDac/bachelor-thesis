@@ -1,0 +1,64 @@
+\documentclass[
+	oneside,
+	openright,
+	titlepage,
+	parskip=half-, 
+	index=totoc, 
+	%numbers=noenddot,
+	appendixprefix=true,
+	headinclude,
+	cleardoublepage=empty,
+	BCOR=5mm,
+	paper=a4,
+	fontsize=11pt, 
+ 	final 
+]{scrbook} 
+
+\usepackage[ngerman,american]{babel}
+
+\input{config/packages}
+\input{config/meta}
+\input{config/config}
+\include{config/commands}
+\input{config/layout} 
+
+\bibliography{literature}
+           
+\begin{document}
+
+\raggedbottom
+\selectlanguage{american}
+\pagestyle{plain}
+\pagenumbering{alph}   
+
+\include{content/titlepage}
+%\include{content/titlecomment}
+
+\pagenumbering{roman}
+
+\include{content/declaration}
+\include{content/declaration_ai}
+\include{content/abstract}
+
+\pagestyle{scrheadings}
+\include{content/contents}
+\include{content/notation}
+
+\pagenumbering{arabic}
+\pagestyle{scrheadings}
+%\include{content/diary} % moved to ../diary
+
+%\include{content/example1}
+%\include{content/example2}
+\include{content/conclusion}
+
+\part*{\rule{.9\linewidth}{.6pt} \\ Appendices \\[-1.25ex] \rule{.9\linewidth}{.6pt}}
+\begin{appendices}
+\appendix
+\include{content/appendixA}
+
+\end{appendices}
+
+\include{content/bibliography}
+
+\end{document}

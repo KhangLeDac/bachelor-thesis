@@ -1,0 +1,162 @@
+\chapter{Theoretical Background}\label{ch: ch2}%
+
+\section{Machine Learned Interatomic Potentials}
+An MLIP is a surrogate model that approximates the potential energy surface of a system.
+It receives as input a set of atom positions $\{(x_i,y_i,z_i)\}$ and atom types and outputs the potential energy of the system for the given configuration.
+MLIPs bridge the gap between \textit{ab initio} methods and physics-based force fields.
+Because they use training data from \textit{ab initio} calculations to learn how to predict the potential energy from the atomic structure, they reach almost \textit{ab initio} accuracy with a lower computational cost \cite{Jacobs2025}. 
+Specifically, while standard quantum mechanical \textit{ab initio} calculations suffer from a computational scaling between $\mathcal{O}(N_{\text{elec}}^3)$ and $\mathcal{O}(N_{\text{elec}}^7)$ depending on the desired accuracy and the number of electrons \cite{Anstine2023}, MLIPs overcome this bottleneck. 
+By exploiting the short-sightedness of electronic matter and restricting interactions to local atomic environments, MLIPs achieve a linear scaling of $\mathcal{O}(N_{\text{atoms}})$, enabling the efficient simulation of large-scale systems \cite{Schaefer2025} \cite{Anstine2023}.
+
+\subsection{MACE}
+The fundamental concept of many MLIPs originates from the classical Behler-Parrinello architecture \cite{Behler2007}. 
+In this approach, the total potential energy of a system is decomposed into a sum of local atomic site energies. 
+While quantum mechanical \textit{ab initio} calculations inherently only provide a single global energy for the entire delocalized electronic system, this spatial decomposition serves as a highly effective postulated core principle for MLIPs to achieve linear scaling.
+To achieve this, the Cartesian coordinates $\{(x_i, y_i, z_i)\}$ are transformed into atom-centered symmetry functions (ACSFs) that act as explicit local descriptors. 
+These descriptors are rigorously defined in order to be invariant to physical transformations: translation, rotation, and permutation \cite{Behler2007, Jacobs2025}.
+
+MACE is a modern architecture for MLIPs based on equivariant message passing graph neural networks \cite{batatia2024foundation}. 
+It shares the concept of an atom-centered energy decomposition from classical Behler-Parrinello type MLIPs.
+In addition, MACE advances the description of local environments.
+Instead of relying on fixed ACSFs, MACE dynamically learns highly expressive, equivariant local atomic tensor representations during its message passing steps, thereby preserving geometric information and transforming predictably under rotation \cite{batatia2024foundation}\cite{Jacobs2025}.
+
+Ultimately, the MACE architecture conserves the fundamental physical symmetries of the system \cite{Drautz2019}\cite{Jacobs2025}\cite{batatia2024foundation}:
+\begin{itemize}
+    \item Translation invariant
+    \item Rotation equivariant (during internal message passing) and rotation invariant (for scalar descriptors and final energies)
+    \item Permutation invariant 
+    \item Reflection invariant
+    \item Atom centered
+\end{itemize}
+
+Because these local site energies $E_i$ are fully invariant under physical transformations, a physically meaningful total potential energy $E_{\text{tot}}$ for the entire system can be obtained via summation over all local site energies $E_i$ \cite{batatia2024foundation}:
+\begin{align}
+    E_{\text{tot}} = \sum_{i=1}^{N_{\text{atoms}}} E_i
+\end{align}
+The forces $\vct{F}_i$ on each atom $i$ are then obtained analytically by taking the negative gradient of the total energy with respect to the atomic positions $\vct{x}_i$ \cite{Jacobs2025}\cite{Schaefer2025}:
+\begin{align}
+    \vct{F}_i = -\frac{\partial E_{\text{tot}}}{\partial \vct{x}_i}
+\end{align}
+
+Since reference values for the local site energies $E_i$ do not exist in \textit{ab initio} methods, MLIPs are trained by fitting their global predictions on the global \textit{ab initio} properties. 
+The model parameters $\vartheta$ are iteratively optimized by minimizing a loss function $\mathcal{L}$ that is typically defined as a weighted sum of the mean squared errors of the total energies and atomic forces over the training dataset \cite{Schaefer2025}:
+\begin{align}
+    \mathcal{L}(\vartheta) = \sum_{k=1}^{N_{\text{train}}} \left[ \lambda_E \left\| E_{\text{ref}}^{(k)} - E(\mathcal{S}_k, \vartheta) \right\|_2^2 + \frac{\lambda_F}{3N_{\text{atoms}}^{(k)}} \sum_{i=1}^{N_{\text{atoms}}^{(k)}} \left\| \vct{F}_{\text{ref}}^{i,k} - \vct{F}_i(\mathcal{S}_k, \vartheta) \right\|_2^2 \right]
+\end{align}
+\noindent where $E_{\text{ref}}$ and $\vct{F}_{\text{ref}}$ denote the \textit{ab initio} reference values, $E$ and $\vct{F}_i$ are the respective MLIP predictions for structure $\mathcal{S}_k$, and $\lambda_E$ and $\lambda_F$ are the energy and force weighting hyperparameters.
+\section{MetaD}
+
+\subsection{Collective Variables (CVs)} \label{subsec: collective_variables_definition}
+CVs $\vct{s}({(x_i,y_i,z_i)})$ are a low dimensional representation of the system's 
+configuration space that should ideally capture the essential dynamics of the system.
+They are used to reduce the dimensionality of the system and to bias the reaction in MetaD simulations, as the sampling time required to thoroughly explore the free energy landscape scales exponentially with the number of CV dimensions (the curse of dimensionality).
+While the MetaD framework is applicable to a wide variety of rare-event phenomena, such as structural phase transitions or protein folding \cite{Laio2008}, the primary focus of this work lies in the simulation of chemical reactions. 
+In this specific context, effective CVs must clearly differentiate between the metastable reactant and product states, as well as the transition states connecting them. 
+Furthermore, they should be able to capture the relevant degrees of freedom driving the chemical transformation. 
+Usually, the definition of these variables is done by constructing CVs based on explicit prior knowledge of the system.
+Examples of CVs include dihedral angles, distances, coordination numbers, etc.
+\cite{Laio2008} \cite{Schaefer2025} \\
+
+\subsection{Algorithm}
+MetaD is an enhanced sampling method that allows for the simulation of rare events.
+Here, the degrees of freedom are chosen via the construction of the CVs $\vct{s}(\{(x_i,y_i,z_i)\})$ of the system. 
+
+The potential energy $V_{\text{system}}(\{(x_i,y_i,z_i)\})$ is a microscopic quantity that describes the exact energy of a specific, high-dimensional atomic configuration $\{(x_i,y_i,z_i)\}$. 
+However, chemical processes are thermodynamically driven by the macroscopic free energy surface (FES) $F(\vct{s})$, which additionally accounts for the entropy of the system. 
+The MetaD algorithm fills the potential wells with a history-dependent bias potential in the form of Gaussians, comparable to filling a valley with sand (see Figure \ref{fig: metadynamics_illustration}). 
+By explicitly adding this bias to the microscopic potential energy, the forces acting on the atoms are modified, allowing the system to escape local minima and effectively explore the free energy landscape. 
+The external bias potential $V_\text{G}(\vct{s},t)$ is the sum of the added Gaussians, resulting in the modified total potential energy $V_{\text{tot}}((\{x_i,y_i,z_i\}),t)$ \cite{Laio2008}:
+\begin{align}
+    V_\text{G}(\vct{s},t) &= \sum_{t' < t} w \exp\left( -\frac{(\vct{s} - \vct{s}(t'))^2}{2\sigma^2} \right) \\
+    V_{\text{tot}}((\{x_i,y_i,z_i\}),t) &= V_{\text{system}}(\{x_i,y_i,z_i\}) + V_\text{G}(\vct{s}(\{x_i,y_i,z_i\}),t)
+\end{align}
+
+While the bias is applied locally to $V_{\text{system}}(\{x_i,y_i,z_i\})$ at each time step, the continuous accumulation of these Gaussians systematically fills the macroscopic free energy wells \cite{Laio2008}. 
+After filling the potential wells, the FES can be reconstructed from the accumulated bias potential:
+\begin{align}
+    V_\text{G}(\vct{s},t) \to -F(\vct{s}) \text{ for } t \to \infty
+\end{align}
+\cite{Laio2008} \cite{Schaefer2025} \\
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{metadynamics_illustration.png}
+    \caption{Example illustration of MetaD. 
+    The upper image shows, which gaussian was placed at which coordinate.
+    The lower image shows the initial potential energy surface (black line) and added bias potential.
+    The added bias potential is also flipped at the $s$-axis to show how the free energy surface is reconstructed.
+    Source: \cite{Laio2008}}
+    \label{fig: metadynamics_illustration}
+\end{figure}
+
+\subsection{Coordination Numbers (CNs)} \label{ch: ch2.2.3}
+
+For this work specifically, CNs are used as CVs in the MetaD simulations throughout multiple instances.
+
+While the reaction mechanism of a chemical reaction can often be described using the distances between specific atoms, calculating absolute distances as a CV is typically unsuitable due to effects such as the Grotthuss mechanism \cite{marx2010aqueous, batatia2024foundation}.
+Therefore, Coordination Numbers (CNs) are commonly used as CVs instead of specific distances \cite{Laio2008}. \\
+For the computation of the CN of a tracked atom with respect to a fixed atom, a cutoff radius $r_{cut}$ is chosen.
+If the tracked atom is inside the sphere with radius $r_{cut}$, the coordination number is $\approx$ 1, otherwise, it is $\approx$ 0. \\
+Since gradient calculations rely on automatic differentiation across all MLIP features, the CVs have to be differentiable.
+To achieve a differentiable implementation of the CNs, the following function is computed:
+
+\begin{align}
+    CN(atom \_ type) = \sum_{i: \ atom_i = atom \_ type} \frac{1 - (\frac{r_i}{r_{cut}})^n}{1 - (\frac{r_i}{r_{cut}})^m}
+\end{align}
+
+Here, $n, \ m \in \mathbb{N}$ are parameters that control the exact steepness and the exact form of the step function \cite{Laio2008}.
+Throughout this project thesis, the default values of $n=6$ and $m=12$ set by PLUMED are used \cite{plumed2014}\cite{plumed2019}. \\
+
+\section{Principal Component Analysis (PCA)}
+Let $\matr{X} \in \mathbb{R}^{n \times p}$ be a data matrix with $n$ observations and $p$ variables. The Principal Component Analysis (PCA) is a technique to reduce the dimensionality of a dataset, that consists of a large number of correlated variables.
+For that, it identifies the directions which maximize the variance of the data.
+This is done by computing the eigenvalues and eigenvectors of the covariance matrix $\matr{X}^T \matr{X} \in \mathbb{R}^{p \times p}$ of the data:
+\begin{align}
+    \matr{X}^T \matr{X} &= \matr{V} \Sigma^2 \matr{V}^T \\
+    \Sigma^2 &= \mathrm{diag}(\sigma_1^2, \dots, \sigma_p^2), \quad \sigma_1^2 \geq \sigma_2^2 \geq \dots \geq \sigma_p^2
+\end{align}
+The matrix $\matr{V} = [\vct{v}_1, \dots, \vct{v}_p]$ contains the eigenvectors of the covariance matrix as its columns, and the diagonal matrix $\Sigma^2$ contains the corresponding eigenvalues.
+As the eigenvalues are ordered in descending order, the first eigenvector $\vct{v}_1$ corresponds to the direction of maximum variance in the data and the second eigenvector $\vct{v}_2$ corresponds to the direction of the second largest variance, etc.
+
+To determine the eigenvalues and eigenvectors of the covariance matrix, the Singular Value Decomposition (SVD) of the data matrix $\matr{X}$ can be used.
+For every matrix $\matr{X} \in \mathbb{R}^{n \times p}$, there exist orthogonal matrices $\matr{U} \in \mathbb{R}^{n \times n}$ and $\matr{V} \in \mathbb{R}^{p \times p}$ and a diagonal matrix $\Sigma \in \mathbb{R}^{n \times p}$ such that:
+\begin{align}
+    \matr{\Sigma} &=
+    \begin{pmatrix}
+        \sigma_1  & \dots & 0 \\
+        \vdots  & \ddots & \vdots \\
+        0  & \dots & \sigma_p \\
+        0  & \dots & 0
+    \end{pmatrix} \\
+    \matr{X} &= \matr{U} \Sigma \matr{V}^T  \text{ and } \\
+    \matr{X}^T \matr{X} &= \left(\matr{U} \Sigma \matr{V}^T\right)^T \left(\matr{U} \Sigma \matr{V}^T\right) = \matr{V} \Sigma^T \Sigma \matr{V}^T = \matr{V} \Sigma^2 \matr{V}^T
+\end{align}
+Therefore, the SVD of the data matrix $\matr{X}$ gives the eigenvalues and eigenvectors of the covariance matrix $\matr{X}^T \matr{X}$, which are used to perform PCA.
+\cite{Jolliffe2002} \cite{IntoliPCA} \cite{Richter2024}
+
+\section{State of the Art}
+In general, PCA is a widely adopted dimensionality reduction method for constructing CVs in protein dynamics.
+One of the most prominent examples is the concept of essential dynamics introduced by Amadei et al. \cite{Amadei1993}.
+In their framework, protein dynamics are described by a trajectory $\vct{x}(t)$ containing the coordinates of the $N$ atoms of the protein at each time step $t$.
+\begin{align}
+    \vct{x}(t) = \begin{pmatrix}\vct{x}_1(t) \\ \vdots \\ \vct{x}_N(t)\end{pmatrix} \in \mathbb{R}^{3N} 
+\end{align}
+It is analyzed by calculating the covariance matrix of the positional displacements:
+\begin{align}
+    \matr{C}(t) = \operatorname{cov}(\vct{x}(t)) = (\vct{x}(t)-\langle \vct{x} \rangle)(\vct{x}(t)-\langle \vct{x} \rangle)^T \\
+    \langle \vct{x} \rangle = \frac{1}{T} \int_0^T \vct{x}(t) dt \quad \text{(time average)}
+\end{align}
+The covariance matrix is computed for all times and the time average is computed. 
+After that, diagonalization will yield the eigenvalues in descending order.
+The essential subspace is defined as the subspace spanned by the first $n$ eigenvectors with the largest eigenvalues.
+Thus, a lower dimensional representation of the dynamics is obtained while retaining the maximal variance in the subspace.
+\cite{Amadei1993} \\
+
+Furthermore, the project thesis adopts several key methodological concepts from Schäfer et al. \cite{Schaefer2025}.
+In their work, Schäfer et al. proposed a method that aims to generate structurally diverse training data for MLIPs efficiently and automatically.
+Instead of using hand-crafted CVs, the method constructs global descriptors from averaged local descriptors from the MLIP that is used, 
+performs PCA to obtain a lower dimensional representation of the system and creates CVs from the principal components to perform the biased sampling. 
+This methodology was successfully demonstrated and benchmarked on alanine dipeptide in vacuum, liquid water in an active learning scheme, and the highly viscous ionic liquid $\text{BMIM}^+\text{BF}_4^-$
+\cite{Schaefer2025}.
+\\
+

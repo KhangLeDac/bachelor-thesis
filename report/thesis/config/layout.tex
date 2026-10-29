@@ -1,0 +1,195 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TABLES
+
+\setlength{\extrarowheight}{3pt}
+\newcommand{\tableheadline}[1]{\multicolumn{1}{c}{\spacedlowsmallcaps{#1}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CAPTIONS
+
+\captionsetup{font=small}
+\setcapindent{0pt}
+\setkomafont{descriptionlabel}{\usekomafont{disposition}\bfseries}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% LISTINGS 
+
+\lstset{language=[LaTeX]Tex,%C++ % Specify the language(s) for listings here
+morekeywords={PassOptionsToPackage,selectlanguage},
+keywordstyle=\color{RoyalBlue}, % Add \bfseries for bold
+basicstyle=\small\ttfamily, % Makes listings a smaller font size and a different font
+%identifierstyle=\color{NavyBlue}, % Color of text inside brackets
+commentstyle=\color{Green}\ttfamily, % Color of comments
+stringstyle=\rmfamily, % Font type to use for strings
+numbers=left, % Change left to none to remove line numbers
+numberstyle=\scriptsize, % Font size of the line numbers
+stepnumber=5, % Increment of line numbers
+numbersep=8pt, % Distance of line numbers from code listing
+showstringspaces=false, % Sets whether spaces in strings should appear underlined
+breaklines=true, % Force the code to stay in the confines of the listing box
+%frameround=ftff, % Uncomment for rounded frame
+frame=single, % Frame border - none/leftline/topline/bottomline/lines/single/shadowbox/L
+belowcaptionskip=.75\baselineskip 
+}
+
+\newenvironment{mathlist}{
+    \begin{list}{}{\parsep 0pt
+                   \setlength{\labelwidth}{0.6in}
+                   \setlength{\leftmargin}{0.7in}
+                   \setlength{\labelsep}{0.1in}
+                   \def\makelabel##1{$##1$\hfill}}}{\end{list}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\raggedbottom
+\setlength\parindent{0pt}
+
+\linespread{1.05}
+
+\areaset[current]{336pt}{750pt}
+\setlength{\marginparwidth}{7em}%
+\setlength{\marginparsep}{2em}%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+
+\theoremstyle{plain}
+\newtheorem{defi}[algocf]{Definition}
+\newtheorem{asm}[algocf]{Assumption}
+\newtheorem{prop}[algocf]{Proposition}
+\newtheorem{cor}[algocf]{Corollary}
+\newtheorem{lem}[algocf]{Lemma}
+\newtheorem{thm}[algocf]{Theorem}
+
+\theoremstyle{definition}
+\newtheorem{rem}[algocf]{Remark}
+\newtheorem{ex}[algocf]{Example}
+
+%\theoremstyle{remark}
+
+\Crefname{prop}{Proposition}{Propositions}
+\Crefname{defi}{Definition}{Definitions}
+\Crefname{algocf}{Algorithm}{Algorithms}
+
+%\numberwithin{algocf}{chapter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CHAPTER TITLES
+
+\addtokomafont{disposition}{\normalfont}
+\setkomafont{chapter}{\Large\bfseries}
+
+\newcommand\titlerule[1][1pt]{\rule{\textwidth}{#1}}
+
+\renewcommand\chapterlinesformat[3]{%
+  \vspace{-2.1cm}
+  \vspace{1cm}
+  #2\nobreak%
+  \Ifstr{#2}{}{}{\kern-\dp\strutbox}%
+  \MakeUppercase{#3}%
+  \par\nobreak\vspace{-9pt}\titlerule\vspace{-18pt}%
+}
+
+
+\makeatletter
+\def\@makechapterhead#1{%
+  \vspace*{0.1cm} \begingroup\raggedright
+  \noindent\normalfont\Large\bfseries
+  \setbox0=\vbox{A\par A}% measure two lines
+  \dimen0=\ht0 % save the height
+  \sbox0{A}% measure just one uppercase letter
+  \dimen2=\ht0 % save the height
+  \makebox[0pt][r]{%
+    % lower the box containing the chapter number
+    \raisebox{\dimexpr\dimen2-\dimen0\relax}[\dimen2][0pt]{%
+      % scale the chapter number to be as high as two lines of text
+      \resizebox{!}{\dimen0}{\thechapter}%
+    }\hspace{5mm}% some gap to the title
+  }%
+  % typeset the title
+  \MakeUppercase{#1}\par%
+  \nobreak\vspace{-9pt}\titlerule
+  \endgroup
+  \vspace{3ex}
+}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SECTION TITLES
+
+\setkomafont{section}{\Large\bfseries}%\MakeUppercase}
+
+\RedeclareSectionCommand[
+  runin=false,
+  afterindent=false,
+  beforeskip=\baselineskip,
+  afterskip=.25\baselineskip
+  ]{section}
+\RedeclareSectionCommand[
+  %runin=false,
+  afterindent=false,
+  beforeskip=.75\baselineskip,
+  afterskip=.25\baselineskip]{subsection}
+\RedeclareSectionCommand[
+  %runin=false,
+  afterindent=false,
+  beforeskip=.5\baselineskip,
+  afterskip=.25\baselineskip]{subsubsection}
+\RedeclareSectionCommand[
+  runin=true,
+  %afterindent=false,
+  beforeskip=.5\baselineskip,
+  afterskip=1em]{paragraph}
+\RedeclareSectionCommand[
+  runin=true,
+  %afterindent=false,
+  beforeskip=.5\baselineskip,
+  afterskip=1em]{subparagraph}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PART TITLES
+
+\renewcommand*{\partpagestyle}{empty}
+\setkomafont{part}{\huge\bfseries\MakeUppercase}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HEADLINE
+
+\newlength{\hscale}
+\newlength{\vscale}
+
+\setlength{\hscale}{1mm}
+\setlength{\vscale}{1mm}
+
+\setlength{\headsep}{11\vscale}
+
+\newlength{\headtextwidth} % This is the width of the text
+\newlength{\headmarginparsep} % This is the width of the whitespace between text and margin
+\newlength{\headmarginparwidth} % This is the width of the margin
+\newlength{\headtotal} % This is the total width of the header
+\newlength{\contentwidth} % An alias for \headtotal
+\newcommand{\recalchead}{% Command to recalculate the header-related length when needed
+	\setlength{\headtextwidth}{\textwidth}%
+	\setlength{\headmarginparsep}{\marginparsep}%
+	\setlength{\headmarginparwidth}{\marginparwidth}%
+	\setlength{\headtotal}{\headtextwidth+\headmarginparsep+\headmarginparwidth}%
+	\setlength{\contentwidth}{\headtotal}%
+}
+
+\renewpagestyle{scrheadings}{%
+	{}%
+	{}%
+	{\hfill\smash{\makebox[0pt][l]{\makebox[\headtotal][r]{%
+		\makebox[\headtextwidth][r]{\hfill\rightmark}%
+		\makebox[3\hscale]{}\rule[-1mm]{0.5pt}{19\vscale-1mm}\makebox[3\hscale]{}%
+		\hspace{-2ex}\rule[-1mm]{0.5pt}{19\vscale-1mm}\makebox[3\hscale]{}%
+		\makebox[7\hscale][l]{\thepage}}}}}%
+}{%
+	{}%
+	{}%
+	{}%
+}
+
+\renewcommand*{\chapterpagestyle}{scrheadings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
