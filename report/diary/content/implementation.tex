@@ -1,0 +1,348 @@
+\subsection*{21.10 \quad Understanding Tobi's \texttt{qrc\_spin.py}}
+Idea:
+n qubit with random Ising type Hamiltonian, including dissipation
+
+Pipeline:
+\begin{enumerate}
+    \item encode data into hamiltonian via $\_generate\_field\_strength$ and build hamiltonian
+    \item Evolve: $qt.mesolve$ integrates Linblad master eq., $L_i = \sqrt{\gamma} \cdot \sigma_i^- $ ($\gamma$: dissipation rate )
+    \item Readout: expectation values, assumes
+    \item Optional diagnostics: negativity entaglement and l1-coherence of $\rho$
+\end{enumerate}
+
+Dynamics of the system: See paper "Dissipation as a resource for QRC"
+
+In simulation: Obtaining feature vector from $\rho$ does not collapse the state, as it is calculated exactly.
+Instead, the finite-shot mode mimics the statistical noise (sampling limited number of outcomes)
+
+\subsection*{21.10 \quad Drafting the plan for the online protocol of the spin system}
+Reservoir
+\begin{itemize}
+    \item 6 spins, 3 probe spins, 3 reservoir spins
+    \item System: $H'$ of "Dissipation as a resource for QRC" paper
+    \item time evolution: $qt.mesolve$ with Linblad master equation
+\end{itemize}
+
+Online Protocol
+\begin{itemize}
+    \item Observables: Full set of Z strings
+    \item Step: 1. Evolve, 2. Measure, 3. Reset probe spins (back-action), 4. Repeat
+\end{itemize}
+
+\subsection*{24.10 \quad Summary of the class \texttt{OnlineSpinQRC}}
+
+\textbf{init:}\\
+Important parameters:
+\begin{itemize}
+    \item model: choose "TiltedTFIM" (encoding in x direction)
+    \item encoding method: chose "uniform" (for encoding method of "Dissipation as a resource for QRC" paper)
+    \item $\theta := \pi \to$ projective measurement (back action is more generally implemented as a rotation)
+    \item damping on: ?
+    \item decay to: ?
+\end{itemize}
+
+Initialization of basic operators:
+\begin{itemize}
+    \item $\sigma_i^x, \sigma_i^z, P0_i, P1_i, E01_i $
+    \item combined with the following method for operator "X": \\
+    \begin{lstlisting}
+    self.X_ops = [self._build_operator(qt.X(), i) for i in range(n)]
+    \end{lstlisting}
+    $\to$ $[X_1 \otimes I_2 \otimes ... \otimes I_n, \ I_1 \otimes X_2 \otimes ... \otimes I_n, \ ... ]$
+\end{itemize}
+
+Random Number Generator:
+\begin{itemize}
+    \item needs to be explained
+\end{itemize}
+
+Shots:
+\begin{itemize}
+    \item needs to be explained
+\end{itemize}
+
+\textbf{run:}
+running the class
+\begin{enumerate}
+    \item implement policy
+    \item run the online protocol: change $\gamma_k, \theta_k$ for each step given the policy and perform an evolution step
+    \item return the features
+\end{enumerate}
+
+\textbf{step:}
+performing a single step of the online protocol
+\begin{enumerate}
+    \item evolve $\rho$ for given $\gamma_k$ and $s_k$
+    \item obtain features $\to$ how does feature function work?
+    \item measure and reset: apply the back action via the Kraus operators for given $\theta_k$
+\end{enumerate}
+
+OnlineSpinQRC.evolve():
+\begin{itemize}
+    \item contruct Hamiltonian
+    \item Linblad evolution via $qt.mesolve$
+\end{itemize}
+
+OnlineSpinQRC.features():
+\begin{itemize}
+    \item how does this work?
+\end{itemize}
+
+OnlineSpinQRC.measureandreset():
+\begin{itemize}
+    \item back action on every probe: $\rho \to \sum K0_i \rho K0_i^\dagger = K0 \rho K0^\dagger + K1 \rho K1^\dagger$
+    Explained the Kraus Operators:
+    \begin{itemize}
+        \item if probe is $\ket{0}$ $\Rightarrow$ stay at $\ket{0}$ \quad $K_0 = \mathbb{I} \otimes P_0$
+        \item if probe is $\ket{1}$ $\Rightarrow$ rotate toward $\ket{0}$ \quad $K_1 = R_y(\theta) \otimes P_1$
+    \end{itemize}
+    \item if ground state $\to$ let unchanged, if excited state $\to$ rotate back to ground state by angle $\theta_k \to U_{SA} = CRY(\theta_k){A,S} \cdot CNOT{S,A}$ (with additional purely logical auxillary qubit)
+    \item $\to$ corresponding Kraus operators: $K0 = P0$ and $K1 = \cos(\theta)P1 + \sin(\theta)E01$
+    \item literature?
+\end{itemize}
+
+\subsection*{Open points}
+tasks left for understanding:
+\begin{itemize}
+    \item understand dampingon $\to$ damping on depermines to which spins the lowering operator is applied to (meaning, which spins information can dissipate from)
+    \item understanding decayto $\to$ to which state the lowering operator decays to $\ket{0}, \ket{1}$. Convention: $\sigma_z \ket{0} = +\ket{0}$ and $\sigma_z \ket{1} = -\ket{1}$ and thus $\ket{0}$ is the higher energy state and $\ket{1}$ is the lower energy state \\$\to$ default: decay to = 1.    \item understand the feature function and the shot system
+    \item look for literature for the back action
+\end{itemize}
+
+new tasks
+\begin{itemize}
+    \item unit tests
+    \item test, if it implements the online protocol and the reservoir correctly
+    \item prepare a read me for tobi
+\end{itemize}
+
+\subsection*{13.11 \quad New online protocol (repository \texttt{qrc})}
+\phantomsection
+\label{sec:new-protocol}
+Tobi restructured the protocol. Every input step consists of three parts: unitary evolution with the
+input, a weak measurement of every spin (dephasing) and a partial reset of every spin (amplitude damping).
+Averaged over the measurement outcomes, one step maps
+\begin{equation*}
+    \rho_{t-1} \;\to\; \sigma_t = U(u_t)\,\rho_{t-1}\,U(u_t)^\dagger
+    \;\to\; \rho_t = \bigotimes_{i=1}^{N} \left(\mathcal{R}_p \circ \mathcal{M}_\lambda\right)_i \sigma_t ,
+\end{equation*}
+where $\mathcal{M}_\lambda$ is the outcome-averaged weak measurement and $\mathcal{R}_p$ the reset.
+The features are read from $\sigma_t$, i.e.\ before the back-action. Code: \texttt{qrc/model.py}
+(Hamiltonian, unitary), \texttt{qrc/channel.py} (measurement and reset), \texttt{qrc/reservoir.py}
+(simulation loop).
+
+\subsubsection*{1. Unitary evolution}
+\begin{itemize}
+    \item transverse-field Ising Hamiltonian with random couplings, the input $u_t$ enters through the
+    field in $x$ direction:
+    \begin{equation*}
+        H(u) = h_z \sum_{i=1}^{N} Z_i + \sum_{i<j} J_{ij} X_i X_j + (h_x + \varepsilon u) \sum_{i=1}^{N} X_i
+        = H_0 + u\, H_1, \qquad H_1 = \varepsilon \sum_i X_i
+    \end{equation*}
+    \item couplings: $J_{ij} \sim \mathcal{U}(-1, 1)$, symmetric, zero diagonal, rescaled such that
+    $\frac{1}{N}\sum_{ij} J_{ij}^2 = J^2$ (rms local coupling $J$). The integer \texttt{seed} fixes the
+    couplings $\to$ one seed = one ``device''
+    \item inputs: $u_t \sim \mathcal{U}(-1, 1)$ i.i.d., held for a time $\tau$:
+    \begin{equation*}
+        U(u_t) = e^{-i H(u_t)\,\tau} \qquad \text{(computed via the eigendecomposition of } H(u_t)\text{)}
+    \end{equation*}
+    \item defaults: $N = 6$, $J = 1$, $h_x = 0.5$, $h_z = 1$, $\varepsilon = 0.1$, $\tau = 2$
+    \item no Lindblad term anymore ($\to$ no \texttt{qt.mesolve}): all dissipation comes from the
+    measurement and the reset after the unitary
+    \item convention: $Z\ket{0} = +\ket{0}$, spin 0 is the most significant bit of the basis index
+\end{itemize}
+
+\subsubsection*{2. Weak measurement $\to$ dephasing}
+\begin{itemize}
+    \item every spin is measured in the $Z$ basis with strength $\lambda = \cos\theta \in [0, 1]$, outcome
+    $s = \pm 1$. Kraus operators in the basis $(\ket{0}, \ket{1})$:
+    \begin{align*}
+        \Omega_+ &= \begin{pmatrix} \cos\frac{\theta}{2} & 0 \\ 0 & \sin\frac{\theta}{2} \end{pmatrix}
+        = \begin{pmatrix} \sqrt{\frac{1+\lambda}{2}} & 0 \\ 0 & \sqrt{\frac{1-\lambda}{2}} \end{pmatrix}, \\
+        \Omega_- &= \begin{pmatrix} \sin\frac{\theta}{2} & 0 \\ 0 & \cos\frac{\theta}{2} \end{pmatrix}
+        = \begin{pmatrix} \sqrt{\frac{1-\lambda}{2}} & 0 \\ 0 & \sqrt{\frac{1+\lambda}{2}} \end{pmatrix}
+    \end{align*}
+    \item completeness: $\Omega_+^\dagger\Omega_+ + \Omega_-^\dagger\Omega_- = \mathbb{I}$
+    \item outcome probabilities $\Pr(\pm) = \operatorname{Tr}(\Omega_\pm^\dagger \Omega_\pm \rho)
+    = \frac{1}{2}(1 \pm \lambda \langle Z \rangle)$ $\to$ $\langle s \rangle = \lambda \langle Z \rangle$
+    (this is the feature $x_i = \lambda\langle Z_i \rangle$)
+    \item averaged over the outcomes (the state is not conditioned on $s$): $\Omega_\pm$ are diagonal, so
+    $(\Omega \rho\, \Omega^\dagger)_{ij} = \omega_i \omega_j \rho_{ij}$ and
+    \begin{equation*}
+        \mathcal{M}_\lambda(\rho) = \Omega_+ \rho\, \Omega_+^\dagger + \Omega_- \rho\, \Omega_-^\dagger
+        = \begin{pmatrix} r_{00} & \sqrt{1-\lambda^2}\, r_{01} \\ \sqrt{1-\lambda^2}\, r_{10} & r_{11} \end{pmatrix}
+    \end{equation*}
+    using $\cos^2\frac{\theta}{2} + \sin^2\frac{\theta}{2} = 1$ and
+    $2\sin\frac{\theta}{2}\cos\frac{\theta}{2} = \sin\theta = \sqrt{1-\lambda^2}$
+    \item $\to$ pure dephasing: populations unchanged, coherences damped. The channel is unital
+    ($\mathcal{M}_\lambda(\mathbb{I}/2) = \mathbb{I}/2$)
+    \item limits: $\lambda = 1$ projective measurement ($\Omega_+ = \ket{0}\langle 0\rvert$,
+    $\Omega_- = \ket{1}\langle 1\rvert$, coherences destroyed); $\lambda = 0$ no information
+    ($\Omega_\pm = \mathbb{I}/\sqrt{2}$, state unchanged)
+\end{itemize}
+
+\subsubsection*{3. Reset $\to$ amplitude damping}
+\begin{itemize}
+    \item every spin is reset towards $\ket{0}$ with strength $p \in [0, 1]$, outcome not observed. Kraus
+    operators:
+    \begin{equation*}
+        E_0 = \begin{pmatrix} 1 & 0 \\ 0 & \sqrt{1-p} \end{pmatrix}
+        = \ket{0}\langle 0\rvert + \sqrt{1-p}\, \ket{1}\langle 1\rvert, \qquad
+        E_1 = \begin{pmatrix} 0 & \sqrt{p} \\ 0 & 0 \end{pmatrix} = \sqrt{p}\, \ket{0}\langle 1\rvert
+    \end{equation*}
+    \item $E_1$: jump $\ket{1} \to \ket{0}$ with probability $p$ (only if the spin is in $\ket{1}$);
+    $E_0$: no jump, the $\ket{1}$ amplitude is damped by $\sqrt{1-p}$ (``no reset happened'' makes
+    $\ket{0}$ more likely)
+    \item completeness: $E_0^\dagger E_0 + E_1^\dagger E_1 = \operatorname{diag}(1, 1-p) + \operatorname{diag}(0, p) = \mathbb{I}$
+    \item channel, with $E_1 \rho E_1^\dagger = p\, r_{11} \ket{0}\langle 0\rvert$:
+    \begin{equation*}
+        \mathcal{R}_p(\rho) = E_0 \rho E_0^\dagger + E_1 \rho E_1^\dagger
+        = \begin{pmatrix} r_{00} + p\, r_{11} & \sqrt{1-p}\, r_{01} \\ \sqrt{1-p}\, r_{10} & (1-p)\, r_{11} \end{pmatrix}
+    \end{equation*}
+    \item $\to$ a fraction $p$ of the population of $\ket{1}$ is moved to $\ket{0}$, the coherences are damped
+    by $\sqrt{1-p}$
+    \item Bloch picture: $\langle Z \rangle \to (1-p)\langle Z \rangle + p$ $\to$ the Bloch ball shrinks
+    towards $\ket{0}$, not towards the centre. The channel is non-unital, unique fixed point $\ket{0}$
+    \item limits: $p = 0$ nothing happens; $p = 1$ full reset, every state $\to \ket{0}$
+\end{itemize}
+
+\subsubsection*{Combined map and hyperparameters of the dissipation}
+\begin{itemize}
+    \item measurement followed by reset, per spin:
+    \begin{equation*}
+        \begin{pmatrix} r_{00} & r_{01} \\ r_{10} & r_{11} \end{pmatrix} \;\to\;
+        \begin{pmatrix} r_{00} + p\, r_{11} & \sqrt{1-p}\sqrt{1-\lambda^2}\; r_{01} \\
+        \sqrt{1-p}\sqrt{1-\lambda^2}\; r_{10} & (1-p)\, r_{11} \end{pmatrix}
+    \end{equation*}
+    \item both channels are diagonal in the $Z$ basis $\to$ they commute (order irrelevant), and the
+    coherence factors multiply (analogous to $T_1$/$T_2$: $p$ plays the role of $T_1$, $\lambda$ of pure
+    dephasing $T_\varphi$)
+    \item the reset does not depend on the outcome $\to$ the outcome-averaged $\rho$ (here $64\times 64$)
+    can be propagated directly, no trajectories have to be sampled
+    \item hyperparameters controlling the dissipation (same for all spins and all steps):
+    \begin{center}
+    \begin{tabular}{p{0.13\linewidth}p{0.2\linewidth}p{0.5\linewidth}}
+        \hline
+        parameter & channel & effect \\
+        \hline
+        $\lambda \in [0,1]$ & dephasing & information gain per shot ($x = \lambda\langle Z\rangle$) vs.\ coherence loss $\sqrt{1-\lambda^2}$ \\
+        $p \in [0,1]$ & amplitude damping & non-unitality and forgetting: deviations from $\ket{0}$ decay like $(1-p)^t$ \\
+        $S$ & -- & number of shots per step, feature noise $\Sigma(t)/S$ \\
+        \hline
+    \end{tabular}
+    \end{center}
+    \item useful limits: $p = 0$ $\to$ unital step, the state relaxes to $\mathbb{I}/d$ and carries no input
+    information; $p = 1$ $\to$ reset to $\ket{0\ldots0}$ every step, no memory; $\lambda = 0$ $\to$ the
+    readout sees nothing
+    \item relation to the old protocol (\texttt{OnlineSpinQRC}): the old Kraus pair
+    $\{P_0, R_y(\theta)P_1\}$ is the special case $\lambda = 1$, $p = \sin^2\frac{\theta}{2}$; the
+    continuous Lindblad damping $\gamma$ is dropped
+\end{itemize}
+
+\subsubsection*{Implementation in \texttt{qrc/channel.py}}
+\begin{itemize}
+    \item \texttt{kraus\_measure(lam)}, \texttt{kraus\_reset(p)}: Kraus operators as defined above, used as
+    reference in the tests
+    \item \texttt{measure\_reset\_spin}: applies the combined map to spin $i$ directly. $\rho$ is reshaped to
+    $(a, 2, b, a, 2, b)$ with $a = 2^i$, $b = 2^{N-i-1}$, so that the middle index is the bit of spin $i$;
+    then the three update rules are applied to all blocks at once (no $2^N \times 2^N$ Kraus matrices)
+    \item \texttt{measure\_reset}: loop over all spins (single-spin channels on different spins commute)
+    \item \texttt{step}: $U\rho U^\dagger$, then \texttt{measure\_reset}
+    \item in \texttt{simulate} the step is split: $\sigma_t = U\rho U^\dagger$ $\to$ store the populations
+    $\operatorname{diag}(\sigma_t)$ for the features $\to$ \texttt{measure\_reset}
+    \item check: \texttt{test\_spin\_map\_matches\_kraus} compares the fast map with
+    $\sum_{k,s} E_k \Omega_s \rho\, \Omega_s^\dagger E_k^\dagger$
+\end{itemize}
+
+\subsection*{17.11 \quad Implementation of measure and reset, overview of the package \texttt{qrc}}
+\phantomsection
+\label{sec:qrc-overview}
+
+\subsubsection*{1. Implementation of measure and reset}
+\textbf{Physics (briefly):}
+\begin{itemize}
+    \item weak measurement of strength $\lambda$ with Kraus operators
+    $\Omega_\pm = \sqrt{\frac{1\pm\lambda}{2}}\, \ket{0}\langle 0\rvert + \sqrt{\frac{1\mp\lambda}{2}}\, \ket{1}\langle 1\rvert$
+    $\to$ averaged over the outcomes: dephasing $\mathcal{M}_\lambda$
+    \item reset of strength $p$ with Kraus operators
+    $E_0 = \ket{0}\langle 0\rvert + \sqrt{1-p}\, \ket{1}\langle 1\rvert$, $E_1 = \sqrt{p}\, \ket{0}\langle 1\rvert$
+    $\to$ amplitude damping $\mathcal{D}_p$
+    \item details $\to$ \hyperref[sec:new-protocol]{entry of 13.11}
+\end{itemize}
+
+\textbf{Combined map:} first dephasing, then damping:
+\begin{equation*}
+    \Phi(\rho) = \mathcal{D}_p\big(\mathcal{M}_\lambda(\rho)\big)
+    = \sum_{k=0,1} E_k \Big( \sum_{s=\pm} \Omega_s\, \rho\, \Omega_s^\dagger \Big) E_k^\dagger
+    = \sum_{k=0,1}\, \sum_{s=\pm} (E_k \Omega_s)\, \rho\, (E_k \Omega_s)^\dagger
+\end{equation*}
+$\to$ one channel with the four Kraus operators $E_k\Omega_s$.
+
+\textbf{Rules for the entries:} for $\rho = \begin{pmatrix} \rho_{00} & \rho_{01} \\ \rho_{10} & \rho_{11} \end{pmatrix}$
+of one spin:
+\begin{itemize}
+    \item for a diagonal Kraus operator $K = \operatorname{diag}(d_0, d_1)$:
+    $(K\rho K^\dagger)_{ij} = d_i d_j\, \rho_{ij}$
+    \item dephasing: $\sum_s$ gives $d_0^2 + d_1^2 = \cos^2\frac{\theta}{2} + \sin^2\frac{\theta}{2} = 1$ on the
+    diagonal and $2\cos\frac{\theta}{2}\sin\frac{\theta}{2} = \sqrt{1-\lambda^2}$ off the diagonal
+    \item damping: $E_0$ is diagonal with $(d_0, d_1) = (1, \sqrt{1-p})$, and
+    $E_1 \rho E_1^\dagger = p\, \rho_{11}\, \ket{0}\langle 0\rvert$
+    \item together:
+    \begin{align*}
+        \rho_{00} &\to \rho_{00} + p\, \rho_{11} \\
+        \rho_{11} &\to (1-p)\, \rho_{11} \\
+        \rho_{01},\, \rho_{10} &\to \sqrt{1-p}\,\sqrt{1-\lambda^2}\;\rho_{01},\, \rho_{10}
+    \end{align*}
+\end{itemize}
+
+\textbf{\texttt{measure\_reset\_spin(rho, spin, n, lam, p)}:} applies $\Phi$ to spin $i$ of $N$ spins, i.e.
+\begin{equation*}
+    \rho \to \sum_{k,s} K_{ks}^{(i)}\, \rho\, K_{ks}^{(i)\dagger}, \qquad
+    K_{ks}^{(i)} = \mathbb{I} \otimes \cdots \otimes \underbrace{E_k \Omega_s}_{\text{spin } i} \otimes \cdots \otimes \mathbb{I}
+\end{equation*}
+\begin{itemize}
+    \item the $2^N \times 2^N$ operators $K_{ks}^{(i)}$ are not built explicitly; instead the rules above are
+    applied directly to the entries
+    \item reshape: the basis index is split into (bits before spin $i$, bit of spin $i$, bits after spin $i$),
+    $\rho \to$ array of shape $(a, 2, b,\; a, 2, b)$ with $a = 2^i$, $b = 2^{N-i-1}$
+    \item the entries with spin $i$ in $\ket{\alpha}$ (row) and $\ket{\beta}$ (column) are then
+    \texttt{r[..., :, $\alpha$, :, :, $\beta$, :]} $\to$ the rules for $\rho_{00}, \rho_{11}, \rho_{01}, \rho_{10}$
+    are applied to all states of the other spins at once
+    \item reshape back to $(2^N, 2^N)$; the leading \texttt{...} allows a stack of several density matrices
+\end{itemize}
+
+\textbf{\texttt{measure\_reset(rho, n, lam, p)}:} checks $\lambda, p \in [0,1]$ and applies
+\texttt{measure\_reset\_spin} to every spin $i = 0, \ldots, N-1$
+$\to$ $\rho \to \big(\Phi \otimes \Phi \otimes \cdots \otimes \Phi\big)(\rho)$ (single-spin channels on
+different spins commute, the order of the loop does not matter).
+
+\subsubsection*{2. Overview of the package \texttt{qrc}}
+\begin{center}
+\begin{tabular}{p{0.17\linewidth}p{0.75\linewidth}}
+    \hline
+    module & functionality \\
+    \hline
+    \texttt{model.py} & parameters (\texttt{Params}: $N, J, h_x, h_z, \varepsilon, \tau$, seed), random
+    couplings $J_{ij}$, Hamiltonian $H(u)$ and thus the unitary evolution $U(u) = e^{-iH(u)\tau}$ \\
+    \texttt{channel.py} & one step of the protocol: Kraus operators of measurement and reset,
+    \texttt{measure\_reset\_spin}, \texttt{measure\_reset}, \texttt{step} ($U\rho U^\dagger$, then measure
+    and reset) \\
+    \texttt{reservoir.py} & performs the simulation: washout (with the check $\ket{0\ldots0}$ vs.\
+    $\mathbb{I}/d$), then $M$ steps; stores populations, features $x_i = \lambda\langle Z_i\rangle$ and shot
+    covariances $\Sigma(t)$ in a \texttt{Run}; trace distance for the memory time \\
+    \texttt{ipc.py} & calculates the IPC at $S$ shots analytically,
+    $C_y(S) = R_A^\top (G + V/S)^+ R_B$, for Legendre targets of delayed inputs; total, per degree
+    (1, 2, 3) and linear memory function (per delay) \\
+    \texttt{sampling.py} & cross-check of \texttt{ipc.py}: draws $S$ shots per step, trains a linear readout
+    on the noisy features and measures the capacity on test data instead of calculating it analytically \\
+    \hline
+\end{tabular}
+\end{center}
+
+Pipeline:
+\begin{equation*}
+    \texttt{Params} \xrightarrow{\texttt{model}} U(u_t)
+    \xrightarrow{\texttt{channel}} \text{step}
+    \xrightarrow{\texttt{reservoir}} \texttt{Run}(u, x, \Sigma)
+    \xrightarrow{\texttt{ipc}} C \quad (\text{checked by } \texttt{sampling})
+\end{equation*}

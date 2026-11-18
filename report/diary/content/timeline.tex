@@ -1,0 +1,59 @@
+\subsection*{October}
+
+\subsubsection*{Initial reading}
+\begin{itemize}
+    \item key vocabulary of reservoir computing, systems and online protocol $\to$ details in Section~\ref{sec:theory}
+\end{itemize}
+
+\subsubsection*{19.10 \quad Reading papers}
+\begin{itemize}
+    \item "Dissipation as a resource for QRC" $\to$ Section~\ref{sec:theory}
+    \item "General theory of monitored QRC" $\to$ Section~\ref{sec:theory}
+\end{itemize}
+
+\subsubsection*{20.10 \quad Call with Tobi}
+\begin{itemize}
+    \item discussion of the paper "General theory of monitored QRC"
+    \item for online protocol to work $\to$ only one observable (pauli z)
+    \item Programming Task: reproduce results of paper with online protocol (6 sping, half (3) control nodes)
+\end{itemize}
+
+\subsubsection*{21.10 \quad Understanding \texttt{qrc\_spin.py} and drafting the online protocol}
+\begin{itemize}
+    \item understood Tobi's \texttt{qrc\_spin.py} file
+    \item drafted the plan for the online protocol of the spin system
+    \item $\to$ Section~\ref{sec:implementation}
+\end{itemize}
+
+\subsubsection*{23.10 \quad Built \texttt{OnlineSpinQRC}}
+Built the class $OnlineSpinQRC$ and  the test file $test\_online\_spin\_qrc.py$. \\
+The class was built based on the class $SpinQRC$ but rewritten. It must still be adapted to
+
+\subsubsection*{24.10 \quad Summary of \texttt{OnlineSpinQRC}}
+\begin{itemize}
+    \item wrote a summary of the class and collected open questions and tasks $\to$ Section~\ref{sec:implementation}
+\end{itemize}
+
+\subsubsection*{27.10 \quad Meeting with Tobi}
+Meeting with tobi - discussed the paper, delete unesccessary functionalities from the class
+
+\subsubsection*{29.10}
+\begin{itemize}
+    \item added literature and thesis to the git folder
+    \item removed unused encoding methods and class variable encoding strength
+\end{itemize}
+
+
+\subsection*{13.11 \quad Meeting with Tobi}
+\begin{itemize}
+    \item restructuring of the protocol
+    \item Tobi prepared a repository for the new protocol: perform dephasing with a weak measurement and the reset with amplitude damping
+    \item new protocol (unitary evolution, weak measurement $\to$ dephasing, reset $\to$ amplitude damping), Kraus operators and hyperparameters $\lambda, p$ $\to$ Section~\ref{sec:implementation}, \hyperref[sec:new-protocol]{New online protocol}
+    \item discused the IPC concept $\to$ paper for the application to quantum systems is "Tackling Sampling Noise in Physical Systems for Machine Learning Application ", need to read to original theory for IPC
+    \item create an image for the hyperparameter field
+\end{itemize}
+
+\subsection*{17.11 \quad Implementation of measure and reset}
+\begin{itemize}
+    \item worked through the implementation of measure and reset and the modules of \texttt{qrc} $\to$ Section~\ref{sec:implementation}, \hyperref[sec:qrc-overview]{entry of 17.11}
+\end{itemize}

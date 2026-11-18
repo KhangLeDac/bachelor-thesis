@@ -9,10 +9,10 @@ import qutip as qt
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from utils.qrc_spin_online import ConstantPolicy, OnlineSpinQRC, trace_distance  # noqa: E402
+from other.initial_testing_out.utils.qrc_spin_online import ConstantPolicy, OnlineSpinQRC, trace_distance  # noqa: E402
 
 try:
-    from utils.qrc_spin import SpinQRC
+    from other.initial_testing_out.utils.qrc_spin import SpinQRC
 except ImportError:  # SpinQRC needs utils/shots.py
     SpinQRC = None
 
@@ -54,7 +54,7 @@ def reference_hamiltonian(res, s):
 
 
 def make(**kw):
-    defaults = dict(n=4, encoding_strength=0.5, coupling_strength=1.0, gamma=0.3, theta=np.pi / 2, dt=1.0, probes=2)
+    defaults = dict(n=4, coupling_strength=1.0, gamma=0.3, theta=np.pi / 2, dt=1.0, probes=2)
     defaults.update(kw)
     return OnlineSpinQRC(**defaults)
 
@@ -82,6 +82,7 @@ def test_probes_int_and_list():
     dict(probes=[-1]),
     dict(model="XY"),
     dict(encoding_method="sparse"),
+    dict(encoding_method="one_to_one"),  # only "uniform" is implemented
     dict(damping_on="some"),
     dict(decay_to=2),
     dict(n_shots=0.5),
@@ -131,26 +132,35 @@ def test_damping_drives_spins_to_the_fixed_point(decay_to):
     assert np.all(sign * z > 0.5)
 
 
+def test_uniform_encoding_field():
+    """Sannia et al.: h' = h (1 + s) on every spin, for a scalar input."""
+    res = make(n=3)
+    np.testing.assert_allclose(res.field_strengths(np.array([0.4])), res.constant_field * 1.4)
+    np.testing.assert_allclose(res.field_strengths(0.4), res.constant_field * 1.4)  # plain float
+
+
+def test_uniform_encoding_needs_scalar_input():
+    res = make(n=3)
+    with pytest.raises(ValueError):
+        res.field_strengths(np.array([0.1, 0.2]))
+    with pytest.raises(ValueError):
+        res.run(np.zeros((4, 2)))
+
+
+def test_coupling_matrix_range_and_seed():
+    a, b = make(coupling_strength=1.5, seed=3), make(coupling_strength=1.5, seed=3)
+    np.testing.assert_allclose(a.J, b.J)
+    assert np.all(np.abs(a.J) <= 1.5)
+    assert not np.allclose(a.J, make(coupling_strength=1.5, seed=4).J)
+
+
 @pytest.mark.skipif(SpinQRC is None, reason="utils/shots.py is missing, SpinQRC cannot be imported")
-@pytest.mark.parametrize("encoding_method", ["one_to_one", "fill", "dense"])
-def test_regression_against_spinqrc(encoding_method):
-    """Without back-action and with decay_to=1, the evolution reproduces SpinQRC exactly."""
-    n, steps, seed = 4, 15, 7
-    data = np.random.default_rng(1).uniform(0, 1, (steps, 1))
-    kw = dict(n=n, encoding_strength=0.6, coupling_strength=1.2, gamma=0.2, dt=1.0,
-              model="TiltedTFIM", encoding_method=encoding_method, seed=seed)
-
-    original = SpinQRC(observables="z_zz", **kw)
-    ref = original.run(data)[:, :n]
-
-    res = OnlineSpinQRC(theta=0.0, probes=1, damping_on="all", decay_to=1, **kw)
-    np.testing.assert_allclose(res.J, original.J)
-    rho = res.initial_state
-    ours = []
-    for s in data:
-        rho = res.evolve(rho, s, res.policy.gamma)  # no measure_and_reset
-        ours.append(z_expectations(res, rho))
-    np.testing.assert_allclose(np.array(ours), ref, atol=1e-6)
+def test_coupling_matrix_matches_spinqrc():
+    """Same seed: online J = 2 x SpinQRC J (online draws from [-J_s, J_s], SpinQRC from [-J/2, J/2])."""
+    original = SpinQRC(n=4, encoding_strength=0.6, coupling_strength=1.2, gamma=0.2, dt=1.0,
+                       observables="z_zz", model="TiltedTFIM", encoding_method="one_to_one", seed=7)
+    res = make(n=4, coupling_strength=1.2, seed=7)
+    np.testing.assert_allclose(res.J, 2 * original.J)
 
 
 # ------------------------------------------------------------ measurement channel

@@ -34,7 +34,7 @@
 
 1. Fujii & Nakajima, Phys. Rev. Appl. 8, 024030 (2017) — spin-reservoir QRC, reset-based input.
 2. Mujal et al., npj Quantum Inf. 9, 16 (2023) — online QRC with weak and projective measurements.
-3. Sannia et al., Quantum 8, 1291 (2024) — dissipation as a resource; universality of dissipative spin reservoirs. *read first
+3. Sannia et al., Quantum 8, 1291 (2024) — dissipation as a resource; universality of dissipative spin reservoirs.
 4. Kobayashi, Fujii & Yamamoto, PRX Quantum 5, 040325 (2024) — feedback-driven QRC, feedback-strength phases.
-5. Morguí-Sancho, Manzano, Giorgi & Zambrini, arXiv:2607.14311 (2026) — general theory of monitored QRC; ESP/fading-memory criteria. *read first
+5. Morguí-Sancho, Manzano, Giorgi & Zambrini, arXiv:2607.14311 (2026) — general theory of monitored QRC; ESP/fading-memory criteria.
 6. Dambre et al., Sci. Rep. 2, 514 (2012) — information processing capacity.

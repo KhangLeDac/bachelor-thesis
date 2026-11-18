@@ -21,9 +21,10 @@ This is the unconditional dynamics of the S -> infinity ensemble of copies. With
 Policies supply (gamma_k, theta_k) per step. Policy A is ``ConstantPolicy``; feedforward
 and feedback policies (B, C) only need a new class with the same ``__call__`` signature.
 
-Reproduction of the system/Hamiltonian described in the paper Sannia et al. : Dissipation as a resource for QRC: use ``model="TiltedTFIM"``, ``encoding_method="uniform"``,
+Reproduction of the system/Hamiltonian described in the paper Sannia et al. : Dissipation as a resource for QRC: use ``model="TiltedTFIM"``, ``encoding_method="uniform"``, ``decay_to=1``.
 For full projection of the probes to |0>: theta = pi
 Right now gamma_k is the same for all spins (no per spin rates)
+
 
 
 
@@ -65,7 +66,6 @@ class OnlineSpinQRC:
     def __init__(
         self,
         n: int,
-        encoding_strength: float, # not in the paper Sannia et al.
         coupling_strength: float, # J_s
         gamma: float,
         theta: float,
@@ -73,8 +73,8 @@ class OnlineSpinQRC:
         probes: int | list[int] = 3,
         model: str = "TiltedTFIM",
         encoding_method: str = "uniform",
-        damping_on: str = "all", #? which spins are damped
-        decay_to: int = 0, #?
+        damping_on: str = "all", # which spins are damped -> information dissipates from
+        decay_to: int = 1, # decides the lowerwing operator: 0 = decay to |0>, 1 = decay to |1>, convention: 0 - Z|0> = +|0> higher energy state, 1 - Z|1> = -|1> lower energy state
         seed: int = 42,
         n_shots: float = float("inf"),
         shot_seed: int | None = None,
@@ -82,7 +82,6 @@ class OnlineSpinQRC:
         """
         Args:
             n: number of spins.
-            encoding_strength: strength of the input encoding into the fields.
             coupling_strength: J_ij uniform in [-J_s, J_s].
             gamma: amplitude-damping rate of the default constant policy.
             theta: reset angle of the default constant policy (0 = dephasing only, pi = full reset).
@@ -90,7 +89,7 @@ class OnlineSpinQRC:
             probes: number M of measured spins (then spins 0..M-1) or an explicit list.
             model: "TiltedTFIM" (input on the X fields, constant Z field) or "TFIM"
                 (input on the Z fields), both with XX couplings, as in SpinQRC.
-            encoding_method: "one_to_one", "fill", "dense"as in SpinQRC, or "uniform" for the Sannia et al. paper.
+            encoding_method: only "uniform" (Sannia et al.) is implemented.
             damping_on: "all" spins or only the "probes".
             decay_to: fixed point of amplitude damping, 0 or 1 (see module docstring).
             seed: seed for J and the encoding weights; same draws as SpinQRC(scaled by 2).
@@ -99,7 +98,7 @@ class OnlineSpinQRC:
         """
         if model not in ("TiltedTFIM", "TFIM"):
             raise ValueError(f"Unknown model: {model}")
-        if encoding_method not in ("one_to_one", "fill", "dense", "uniform"):
+        if encoding_method != "uniform":
             raise ValueError(f"Unknown encoding_method: {encoding_method}")
         if damping_on not in ("all", "probes"):
             raise ValueError(f"damping_on must be 'all' or 'probes', got {damping_on!r}")
@@ -108,7 +107,6 @@ class OnlineSpinQRC:
 
         self.n = n
         self.dim = 2 ** n
-        self.encoding_strength = encoding_strength
         self.coupling_strength = coupling_strength
         self.dt = dt
         self.model = model
@@ -134,7 +132,7 @@ class OnlineSpinQRC:
         self.probe_P1_ops = [self._build_operator(qt.fock_dm(2, 1), q) for q in self.probes] # |1><1|
         self.probe_E01_ops = [self._build_operator(qt.sigmap(), q) for q in self.probes]  # |0><1|
 
-        """Initialize the random number generator"""
+        """Initialize the random number generators"""
         # Random draws in the same order as SpinQRC by factor 2 (seed, then noise_fill if "fill", then J,
         # then Win lazily at the first input), but from a local generator instead of the
         # global np.random state. RandomState(seed) gives the same numbers as np.random.seed.
@@ -143,12 +141,15 @@ class OnlineSpinQRC:
         self.J = self._rng.uniform(-coupling_strength, coupling_strength, size=(n, n))
         self.Win = None
 
+        """Initialize the shot sampler"""
         self.n_shots = n_shots
         self._finite_shots = not np.isinf(n_shots)
         if self._finite_shots and (n_shots < 1 or int(n_shots) != n_shots):
             raise ValueError(f"n_shots must be a positive integer or inf, got {n_shots}")
         self._shot_rng = np.random.default_rng(seed if shot_seed is None else shot_seed)
 
+
+        """Build the parts of the system that do not change with input data."""
         self.initial_state = self._get_initial_state()
         # Build the parts of H that do not change with input data
         self.H_static = self._build_static_hamiltonian()
@@ -243,7 +244,12 @@ class OnlineSpinQRC:
         return rho
 
     def measure_and_reset(self, rho: qt.Qobj, theta: float) -> qt.Qobj:
-        """Unconditional back-action on every probe: rho -> K0 rho K0^+ + K1 rho K1^+.
+        """
+        Unconditional back-action on every probe: rho -> K0 rho K0^+ + K1 rho K1^+.
+
+        What it does:
+        - if probe is |0> => stay at |0>  -- K0 = I @ P0
+        - if probe is |1> => rotate toward |0> -- K1 = R_y(theta) @ P1 
 
         K0 = P0 (outcome 0, left as is), K1 = R_y(theta) P1 (outcome 1, rotated toward |0>).
         R_y(theta) P1 = -sin(theta/2) |0><1| + cos(theta/2) |1><1|. Completeness:
@@ -254,8 +260,8 @@ class OnlineSpinQRC:
             # Apply Kraus operators to every probe
             K0 = P0 # |0><0|
             K1 = c * P1 - s * E01 # cos(theta/2) |1><1| - sin(theta/2) |0><1|
-            rho = K0 @ rho @ K0 + K1 @ rho @ K1.dag()
-        return 0.5 * (rho + rho.dag()) # why that?
+            rho = K0 @ rho @ K0 + K1 @ rho @ K1.dag() 
+        return 0.5 * (rho + rho.dag()) # why that? -> maintain hermiticity against numerical errors
 
     def outcome_probabilities(self, rho: qt.Qobj) -> np.ndarray:
         """Joint Z-basis outcome distribution of the probes, shape (2^M,).
@@ -277,32 +283,17 @@ class OnlineSpinQRC:
         return self._z_signs @ p
 
     def field_strengths(self, data_step: np.ndarray) -> np.ndarray:
-        """Per-spin field from one input step; identical to SpinQRC._generate_field_strengths."""
+        """Per-spin total field from one input step (uniform encoding, Sannia et al.): h (1 + s_k) on every spin.
+
+        Only a scalar input per step is supported; SpinQRC's encodings are not implemented here."""
         data_step = np.atleast_1d(np.asarray(data_step, dtype=float))
         h = self.constant_field
 
         field = np.full(self.n, h)
 
-        # fields from the original SpinQRC, designed for a different system
-        if self.encoding_method == "one_to_one":
-            for i, dat in enumerate(data_step):
-                field[i] = h + 2 * self.encoding_strength * (dat - 0.5)
-        elif self.encoding_method == "fill":
-            per_dim = self.n // len(data_step)
-            for i, dat in enumerate(data_step):
-                a, b = i * per_dim, (i + 1) * per_dim
-                field[a:b] = h + 2 * self.encoding_strength * (dat - 0.5) * self.noise_fill[a:b]
-        elif self.encoding_method == "dense":
-            if self.Win is None:
-                Win = self._rng.uniform(-1, 1, (self.n, len(data_step)))
-                row_sums = np.sum(np.abs(Win), axis=1, keepdims=True)
-                row_sums[row_sums == 0] = 1.0
-                self.Win = Win / row_sums
-            field = h + self.encoding_strength * (self.Win @ (2 * (data_step - 0.5)))
-
         # field from the paper Sannia et al. : Dissipation as a resourse for QRC:
         # input s_k is scalar
-        elif self.encoding_method == "uniform":
+        if self.encoding_method == "uniform":
             if data_step.size != 1:
                 raise ValueError(
                     f"encoding_method='uniform' needs a scalar input per step, got shape {data_step.shape}"

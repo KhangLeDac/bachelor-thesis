@@ -1,0 +1,35 @@
+# Jobs for examples/shot_check.py: analytic vs sampled IPC.
+#
+#     uv run python examples/shot_check.py --config configs/shot_check.toml
+#
+# Every [[points]] entry is one job (one simulation, run in its own process).
+# Results are saved as figures/<file name>.png and .npz, here figures/shot_check.png.
+# Command-line options override the values in this file.
+
+# shot numbers S evaluated for every point (sampling cost hardly depends on S)
+shots = [10, 1e2, 1e3, 1e4, 1e5, 1e6]
+
+reps = 3          # shot seeds per S (error bars)
+seed = 0          # coupling seed (device)
+M = 50000         # samples after the washout (simulation time ~0.6 ms per step)
+T_wash = 1000     # washout steps
+
+[[points]]
+lam = 0.8
+p = 0.7
+note = "best point of the lambda-p map (S = 1e4)"
+
+[[points]]
+lam = 0.8
+p = 0.1
+note = "weak reset: long memory, small signal"
+
+[[points]]
+lam = 0.2
+p = 0.5
+note = "weak measurement: features small compared with shot noise"
+
+[[points]]
+lam = 1.0
+p = 0.5
+note = "projective measurement: all coherence lost"

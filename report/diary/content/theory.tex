@@ -1,0 +1,189 @@
+\subsection*{Initial reading}
+$Key \ Vocabulary$ \\
+Echo State Property:
+\begin{itemize}
+    \item reservoir's state is uniquely determined by the input history, not by the initial condition
+    \item $x(t+1) = f(x(t), u(t)) \ and \ \norm{x(t)-x'(t)} \rightarrow 0 \ as \ t \rightarrow \infty$
+\end{itemize}
+
+Fading Memory:
+\begin{itemize}
+    \item reservoir's current state depends only weakly on inputs from the distant past
+\end{itemize}
+
+Input Separability:
+\begin{itemize}
+    \item ability to discriminate between different input sequences $\to$ adapt behavior to problem
+\end{itemize}
+
+Partial Trace:
+\begin{itemize}
+    \item tracing out the degrees of freedom of a subsystem
+    \item $\rho_A = Tr_B(\rho_{AB})$
+    \item $\ \rho_{AB}\in \mathcal{H}_A \otimes \mathcal{H}_B, \ \mathcal{H}_A, \mathcal{H}_B$ are the Hilbert spaces of subsystems A and B, respectively.
+\end{itemize}
+
+$RC \ Properties$
+\begin{itemize}
+    \item Echo State Property
+    \item Fading Memory
+    \item Input Separability
+    \item fulfils all requirements $to$ universal
+\end{itemize}
+
+$Systems$ \\
+Quantum Systems:
+\begin{itemize}
+    \item transverse fiel Ising model
+\end{itemize}
+
+
+
+$Online Protocol$
+\begin{itemize}
+    \item Input and feedback encoding of data and measurements into quantum reservoir
+    \item  reservoir dynamics - system evolves under a definite quantum transformation
+    \item continuous measurement and preparation of the reservoir for the next step without reset
+\end{itemize}
+
+\subsection*{19.10 \quad Paper: ``Dissipation as a resource for QRC''}
+\begin{itemize}
+    \item engineered losses for each of the spin nodes $\to$ continuous dissipation
+    \item dissipation crucial for echo state property and fading memory
+    \item method: interactions with external environment under Marcovian conditions
+    \begin{itemize}
+        \item time evolution: Linbald master equation (GLKS)
+        \begin{flalign*}
+            \dot{\rho} &= -i[H, \rho] + \sum_{j=1}^{N} \gamma_j
+            \left(L_j \rho L_j^{\dagger}
+            - \frac{1}{2}\{L_j^{\dagger}L_j, \rho\}\right) &&\\
+            &= (\mathcal{U}+\mathcal{D})\rho
+            \quad \text{with } \mathcal{U}\rho = -i[H, \rho]
+            \text{ and } \mathcal{D}\rho = \text{Lindbladian term} &&
+        \end{flalign*}
+
+        \item $L_i$: Jump operator, $\gamma_i$: dissipation rate
+        \item here $L_i = \sigma_i^- = \frac{1}{2}(\sigma_i^x - i\sigma_i^y)$
+    \end{itemize}
+    \item method: continuous dissipation (CD)
+    \begin{itemize}
+        \item new Hamiltonian $H'$ includes $h'(t) = h\cdot(s_k+1)$ $\to$ input signal dictates strength of of magnetic field to the x axis
+        \item reservoir dynamics: $\dot{\rho} = (-i[H'(h_k'), \rho]+\mathcal{D}_L)\rho$
+        \item uniform losses $\gamma_i = \gamma \forall i$
+        \item local dissipator $\mathcal{D}_L = \gamma \sum_{i=1}^{N} \sigma_i^- \rho \sigma_i^+ - \frac{1}{2}\{\sigma_i^+\sigma_i^-, \rho\}$ \\
+        $\to$ local because the chosen jump operators act on individual spins
+        \item update rule: $\rho_{k+1} = e^{\Delta t(\mathcal{U}(s_{k+1})+\mathcal{D}_L)}\rho_k$
+    \end{itemize}
+    \item this generator is universal
+    \item benchmark:
+    \begin{itemize}
+        \item tasks
+        \begin{itemize}
+            \item memory - short term memory, NARMA, parity check
+            \item forecasting - Mackey-Glass
+        \end{itemize}
+        \item readout layer: linear combination of expectation values of Pauli strings of lenght 1 and 2
+    \end{itemize}
+\end{itemize}
+
+\subsection*{19.10 \quad Paper: ``General theory of monitored QRC''}
+\begin{itemize}
+    \item develop general theory of monitored QRC based of indirect quantum measurements (weak, projective, partial, dissipative monitoring protocols)
+    \item quantum monitoring: extracting information from quantum system through sequential measurements
+    \item effect
+    \begin{itemize}
+        \item $E_m$ positive semidefinite
+        \item $\sum_m E_m = I$ (POVM)
+        \item $\operatorname{Pr}_\rho(m) = \operatorname{Tr}(E_m \rho)$
+        \item $[E_m, X] = 0 \forall m \to$ useful for extracting information about observable $X$.
+    \end{itemize}
+    \item back-action: instead of strict projecttion: measurement-induced state disturbance $\to$ captured by Kraus operators $\{\Omega_m\}$ with $\Omega_m^\dagger \Omega_m = E_m$, where $E_m$ has the role of a "projector".
+    \item measurement Map: $\mathcal{M}^{(m)}\rho = \frac{\Omega^\dagger \rho \Omega}{\operatorname{Pr}_\rho(m)}$
+    \item measurement record $\vct{m}_{k} = (m_1, m_2, \ldots, m_k)$
+    \item $\rho_k^{(m_1, m_2, \ldots, m_k)} = (\mathcal{M}^{(m_k)} \circ \Lambda_k) \rho_{k-1}^{(m_1, m_2, \ldots, m_{k-1})} $ with $\Lambda_k$: generig CTPT map describing the evolution of the system between measurements
+    \item Gerald-Naimark theorem: $\mathcal{M}$ can always be implemented as an indirect measurement: Unitary coupling between system of interest (S) and quantum probe (P) followed by projective measurement on the probe.
+    \item Kraus representation of a CPTP map: \\
+    $\mathcal{M}\rho = \sum_m \operatorname{Pr}_\rho (m) \cdot \mathcal{M}^{(m)}\rho = \sum_m \Omega_m \rho \Omega_m^\dagger $ \\
+    $\to$ describes deterministic but irreversible dynamics
+    \begin{enumerate}
+        \item Depahsing measurement map: \\
+        coupling unitary - $U_{PS} = CNOT_{S,P}(RY(\theta)_P \otimes I_S)$
+        \item Amplitude damping measurement map \\
+        coupling unitary - $U_{PS} = CNOT_{S,P}CRY(\theta)_{S,P}$ \\
+        (controlled Y rotation)
+        \item Partial measurement map: \\
+        assign some of the units of a large system the role of the proble \\
+        $\Omega_{\vct{b}_m}^{PM} = \Omega_{b_1} \otimes ... \otimes \Omega_{b_n} \otimes I^{\otimes (N-N_P)}$
+    \end{enumerate}
+    \item quantum channel $\mathcal{T}(s_k)$ such that $\rho_k = \mathcal{T}(s_k) \circ ... \circ \mathcal{T}(s_{1}) \rho_o$
+    \item Learning task: weight matrix such that predicting sequence $\hat{\vct{y}}_k = \matr{W} \vct{x}_k$ minimizes loss to target sequence $\vct{y}_k$
+    \item online protocol:
+    \begin{itemize}
+        \item the QRC map $\mathcal{T}^{(m)}(s) = (\mathcal{M}^{(m)}\circ \Lambda) (s)$
+        \item feature vector: $x_{k,i} = \operatorname{Tr}[M_i\Lambda(s_k)\rho_{k-1}]$
+        \item ESP and FMD given if both $\mathcal{M} \circ \Lambda$ is contractive
+        \item viable QRC map must be both stricty contractive and non-unital
+        \item Measurement back-action con provide contractivity and non-unitality: \\
+        Amplitude damping and partial projective measurements with reset work, Projective , dephasing and partial projective are unital
+    \end{itemize}
+    \item uncertainty of observable mean values: projective measurements reach saturation faster, but weak measurements perform better in long term memory with sufficient shots
+    \item time multiplexing: multiple virtual nodes with measurements, increases feature space $\to$ amplifies information-disturbance trade off
+\end{itemize}
+
+
+
+\subsection*{11.11 \quad Book: ``Quantum Computation and Quantum Information''}
+Read the Chapter of the Density operator
+\begin{itemize}
+    \item used to describe quantum systems whose state is not completely known (ensembles $\{p_i, \ket{\psi_i}\}$)
+    \item Why the partial trace: \\
+    unique operation $\to$ correct description of observable quantities or subsystems of a composite system
+\end{itemize}
+
+\subsection*{12.11 \quad Book ``Quantum Computation and Quantum Information''}
+
+\subsection*{12.11 \quad Paper: ``Time series QRC with weak projective measurement''}
+Read the paper, no new findings.
+
+\subsection*{12.11 \quad Paper: ``Tackling Sampling Noise in Physical Systems for Machine Learning Applications: Fundamental Limits and Eigentasks''}
+Read the theoretical analysis part (Sec. II) to understand the shot procedure
+\begin{itemize}
+    \item setting: inputs $u \sim p(u)$ from the data-generating distribution (DEG), goal: approximate a target function $f(u)$ with $\mathbb{E}_u[f^2] < \infty$ from measurements of the physical system, using a linear readout $f_W(u) = W^T \bar{X}(u)$
+    \item stochastic feature map:
+    \begin{itemize}
+        \item single shot $s$ gives random features $X_k^{(s)}(u)$, $k \in [K]$
+        \item measured features are $S$-shot sample means: $\bar{X}_k(u) = \frac{1}{S}\sum_{s=1}^{S} X_k^{(s)}(u)$
+        \item expectation (limit $S \to \infty$): $x_k(u) = \mathbb{E}_X[\bar{X}_k(u)]$
+        \item exact decomposition: $\bar{X}(u) = x(u) + \frac{1}{\sqrt{S}}\zeta(u)$ with zero-mean noise $\zeta$ and covariance $\Sigma_{jk}(u) = \operatorname{Cov}_X[\zeta_j(u), \zeta_k(u)]$ (independent of $S$, depends only on $u$)
+    \end{itemize}
+    \item physical quantum systems: sampling noise imposed by the measurement postulates \\
+    $\to$ single-shot features are indicator functions of the measurement outcomes, $\bar{X}_k$ is the histogram over $S$ shots; this quantum sampling noise (shot noise of projective measurement) is the limiting noise source, even for error-corrected devices
+    \item REC (Resolvable Expressive Capacity), measured features, distributions:
+    \begin{itemize}
+        \item function capacity (statistical variant): $C[f] = 1 - \min_{W} \frac{\mathbb{E}_u \mathbb{E}_X[(f(u) - f_W(u))^2]}{\mathbb{E}_u[f(u)^2]}$, with $0 \le C[f] \le 1$
+        \item squared error is stochastic $\to$ two averages needed: $\mathbb{E}_X$ over output samples and $\mathbb{E}_u$ over the input domain
+        \item linear estimator and MSE are intentional: measures the ability of the physical system itself, not of a nonlinear post-processing layer
+        \item the distribution of the measured features is fixed by the quantum state $\hat{\rho}(u;\theta)$, hence by the input embedding
+    \end{itemize}
+    \item expectation over input data, inner product: \\
+    $\mathbb{E}_u[f] = \int du\, p(u) f(u)$, inner product $\langle f_\ell, f_{\ell'} \rangle_p = \int f_\ell(u) f_{\ell'}(u) p(u)\, du = \delta_{\ell\ell'}$ \\
+    $\to$ complete, orthonormal function basis $\{f_\ell\}$ w.r.t. $p(u)$
+    \item approximation: minimizing the error over weights, $w = \operatorname{argmin}_W \mathbb{E}_u\mathbb{E}_X[(f - W^T\bar{X})^2]$, solved analytically by a pseudoinverse \\
+    in practice: finite $N$ input samples and finite $S$, weights $w^*(\mathcal{D})$ depend on the dataset $\mathcal{D}$
+    \item total capacity $C_T$: \\
+    $C_T = \sum_{\ell} C[f_\ell] = \operatorname{Tr}\left[\left(\frac{1}{S}G^{+}V + I\right)^{-1}\right] = \sum_{k=0}^{K-1} \frac{1}{1 + \beta_k^2/S}$
+    \begin{itemize}
+        \item Gram matrix $G = \mathbb{E}_u[x x^T]$, covariance matrix $V = \mathbb{E}_u[\Sigma]$
+        \item $\lim_{S\to\infty} C_T = \operatorname{Rank}\{G\} \le K$
+        \item independent of the specific choice of the basis $\{f_\ell\}$
+    \end{itemize}
+    \item eigenvalue problem: \\
+    $V r^{(k)} = \beta_k^2\, G r^{(k)}$, with noise-to-signal (NSR) eigenvalues $0 \le \beta_0^2 \le \dots \le \beta_{K-1}^2$
+    \begin{itemize}
+        \item eigentasks: $y^{(k)}(u) = \sum_j r_j^{(k)} x_j(u)$, orthonormal, $\mathbb{E}_u[y^{(j)}y^{(k)}] = \delta_{jk}$
+        \item capacity of one eigentask: $C[y^{(k)}] = \frac{1}{1 + \beta_k^2/S}$
+        \item measured eigentasks $\bar{y}^{(k)} = \sum_j r_j^{(k)}\bar{X}_j$ orthogonalize signal and noise: $\mathbb{E}_u\mathbb{E}_X[\bar{y}^{(j)}\bar{y}^{(k)}] = \delta_{jk}(1 + \beta_k^2/S)$ \\
+        $\to$ signal-to-noise ratio $S/\beta_k^2$; eigentasks are the functions most robust to sampling noise
+        \item $G$ and $V$ can be estimated from stochastic samples, so it is directly applicable in experiment
+    \end{itemize}
+\end{itemize}
