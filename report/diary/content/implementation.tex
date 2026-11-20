@@ -176,8 +176,8 @@ The features are read from $\sigma_t$, i.e.\ before the back-action. Code: \text
     $2\sin\frac{\theta}{2}\cos\frac{\theta}{2} = \sin\theta = \sqrt{1-\lambda^2}$
     \item $\to$ pure dephasing: populations unchanged, coherences damped. The channel is unital
     ($\mathcal{M}_\lambda(\mathbb{I}/2) = \mathbb{I}/2$)
-    \item limits: $\lambda = 1$ projective measurement ($\Omega_+ = \ket{0}\langle 0\rvert$,
-    $\Omega_- = \ket{1}\langle 1\rvert$, coherences destroyed); $\lambda = 0$ no information
+    \item limits: $\lambda = 1$ projective measurement ($\Omega_+ = \ket{0}\bra{0}$,
+    $\Omega_- = \ket{1}\bra{1}$, coherences destroyed); $\lambda = 0$ no information
     ($\Omega_\pm = \mathbb{I}/\sqrt{2}$, state unchanged)
 \end{itemize}
 
@@ -187,14 +187,14 @@ The features are read from $\sigma_t$, i.e.\ before the back-action. Code: \text
     operators:
     \begin{equation*}
         E_0 = \begin{pmatrix} 1 & 0 \\ 0 & \sqrt{1-p} \end{pmatrix}
-        = \ket{0}\langle 0\rvert + \sqrt{1-p}\, \ket{1}\langle 1\rvert, \qquad
-        E_1 = \begin{pmatrix} 0 & \sqrt{p} \\ 0 & 0 \end{pmatrix} = \sqrt{p}\, \ket{0}\langle 1\rvert
+        = \ket{0}\bra{0} + \sqrt{1-p}\, \ket{1}\bra{1}, \qquad
+        E_1 = \begin{pmatrix} 0 & \sqrt{p} \\ 0 & 0 \end{pmatrix} = \sqrt{p}\, \ket{0}\bra{1}
     \end{equation*}
     \item $E_1$: jump $\ket{1} \to \ket{0}$ with probability $p$ (only if the spin is in $\ket{1}$);
     $E_0$: no jump, the $\ket{1}$ amplitude is damped by $\sqrt{1-p}$ (``no reset happened'' makes
     $\ket{0}$ more likely)
     \item completeness: $E_0^\dagger E_0 + E_1^\dagger E_1 = \operatorname{diag}(1, 1-p) + \operatorname{diag}(0, p) = \mathbb{I}$
-    \item channel, with $E_1 \rho E_1^\dagger = p\, r_{11} \ket{0}\langle 0\rvert$:
+    \item channel, with $E_1 \rho E_1^\dagger = p\, r_{11} \ket{0}\bra{0}$:
     \begin{equation*}
         \mathcal{R}_p(\rho) = E_0 \rho E_0^\dagger + E_1 \rho E_1^\dagger
         = \begin{pmatrix} r_{00} + p\, r_{11} & \sqrt{1-p}\, r_{01} \\ \sqrt{1-p}\, r_{10} & (1-p)\, r_{11} \end{pmatrix}
@@ -262,10 +262,10 @@ The features are read from $\sigma_t$, i.e.\ before the back-action. Code: \text
 \textbf{Physics (briefly):}
 \begin{itemize}
     \item weak measurement of strength $\lambda$ with Kraus operators
-    $\Omega_\pm = \sqrt{\frac{1\pm\lambda}{2}}\, \ket{0}\langle 0\rvert + \sqrt{\frac{1\mp\lambda}{2}}\, \ket{1}\langle 1\rvert$
+    $\Omega_\pm = \sqrt{\frac{1\pm\lambda}{2}}\, \ket{0}\bra{0} + \sqrt{\frac{1\mp\lambda}{2}}\, \ket{1}\bra{1}$
     $\to$ averaged over the outcomes: dephasing $\mathcal{M}_\lambda$
     \item reset of strength $p$ with Kraus operators
-    $E_0 = \ket{0}\langle 0\rvert + \sqrt{1-p}\, \ket{1}\langle 1\rvert$, $E_1 = \sqrt{p}\, \ket{0}\langle 1\rvert$
+    $E_0 = \ket{0}\bra{0} + \sqrt{1-p}\, \ket{1}\bra{1}$, $E_1 = \sqrt{p}\, \ket{0}\bra{1}$
     $\to$ amplitude damping $\mathcal{D}_p$
     \item details $\to$ \hyperref[sec:new-protocol]{entry of 13.11}
 \end{itemize}
@@ -286,7 +286,7 @@ of one spin:
     \item dephasing: $\sum_s$ gives $d_0^2 + d_1^2 = \cos^2\frac{\theta}{2} + \sin^2\frac{\theta}{2} = 1$ on the
     diagonal and $2\cos\frac{\theta}{2}\sin\frac{\theta}{2} = \sqrt{1-\lambda^2}$ off the diagonal
     \item damping: $E_0$ is diagonal with $(d_0, d_1) = (1, \sqrt{1-p})$, and
-    $E_1 \rho E_1^\dagger = p\, \rho_{11}\, \ket{0}\langle 0\rvert$
+    $E_1 \rho E_1^\dagger = p\, \rho_{11}\, \ket{0}\bra{0}$
     \item together:
     \begin{align*}
         \rho_{00} &\to \rho_{00} + p\, \rho_{11} \\
@@ -346,3 +346,127 @@ Pipeline:
     \xrightarrow{\texttt{reservoir}} \texttt{Run}(u, x, \Sigma)
     \xrightarrow{\texttt{ipc}} C \quad (\text{checked by } \texttt{sampling})
 \end{equation*}
+
+\subsection*{18.11 \quad Scripts \texttt{shot\_check}, \texttt{rq1\_map}, \texttt{rq1\_analyze} and the job system}
+\phantomsection
+\label{sec:job-system}
+
+\subsubsection*{1. Overview of the files}
+\begin{center}
+\begin{tabular}{p{0.27\linewidth}p{0.65\linewidth}}
+    \hline
+    file & functionality \\
+    \hline
+    \texttt{examples/shot\_check.py} & cross-check analytic vs.\ sampled IPC: for a few $(\lambda, p)$ simulate
+    once, then for every $S$ draw $S$ shots per step (\texttt{noisy\_features}), train the readout on the first
+    half, test on the second (\texttt{readout\_capacity}) and compare with $C(S) = R^T(G + V/S)^+R$;
+    several shot seeds per $S$ for error bars $\to$ \texttt{examples/figures/shot\_check.png/.npz} and a table \\
+    \texttt{examples/configs/shot\_check.toml} & job file: shots $10 \ldots 10^6$, 3 shot seeds, $M = 50000$,
+    $T_{wash} = 1000$, four \texttt{[[points]]} (best point, weak reset, weak measurement, projective) \\
+    \texttt{rq1/rq1\_map.py} & RQ1 baseline: total IPC, degree 1--3 and linear memory function over a
+    $(\lambda, p)$ grid for several devices (coupling seeds) and several $S$ \\
+    \texttt{rq1/configs/rq1\_map.toml} & $\lambda = 0.1 \ldots 1.0$ (10), $p = 0.05 \ldots 0.95$ (19), seeds $0 \ldots 9$,
+    $S \in \{10^2, \ldots, 10^6, \infty\}$, $M = 50000$, delays $(20, 10, 7)$ for degree 1, 2, 3,
+    output \texttt{rq1/results/rq1\_map} \\
+    \texttt{rq1/rq1\_analyze.py} & reads the result files (also partial results), checks washout and
+    memory cut-off, finds the optimum $(\lambda^*, p^*)$ per $S$ (mean over the complete devices) and saves
+    three figures \\
+    \hline
+\end{tabular}
+\end{center}
+
+\textbf{\texttt{rq1\_analyze.py}} produces
+\begin{itemize}
+    \item \texttt{rq1\_map\_maps.png}: mean total IPC over the devices per $S$ (star: optimum), std over devices below
+    \item \texttt{rq1\_map\_optimum.png}: $\lambda^*, p^*$ vs.\ $S$ with a bootstrap over devices, IPC at the optimum
+    \item \texttt{rq1\_map\_ridge.png}: memory function and degree split at the optimum of every finite $S$
+    \item checks: max washout trace distance, jobs with warnings, grid points where the memory at the
+    largest delay is $> 0.01$ (total IPC underestimated there because the delays are cut off)
+\end{itemize}
+
+\subsubsection*{2. The job system}
+\begin{itemize}
+    \item settings live in a TOML job file (\texttt{--config}), not in the code $\to$ every run is
+    reproducible from \texttt{configs/}; unknown or missing keys raise an error
+    \item \texttt{shot\_check}: priority command line $>$ job file $>$ defaults; every \texttt{[[points]]}
+    entry is one job
+    \item \texttt{rq1\_map}: one job $=$ one $(\lambda, p, \text{seed})$ $\to$ simulate once, evaluate at all $S$
+    (the cost hardly depends on $S$), here $10 \cdot 19 \cdot 10 = 1900$ jobs
+    \item parallelisation: \texttt{ProcessPoolExecutor} over jobs, one BLAS thread per process
+    (\texttt{OMP\_NUM\_THREADS=1}, small matrices), default workers $=$ cores $- 2$
+    \item each job is saved immediately as its own file \texttt{<out>/lam0.80\_p0.70\_seed3.npz}
+    (capacities, washout distance, warnings, git commit, runtime); written to a \texttt{.tmp} file and then
+    renamed $\to$ no half-written results
+    \item restartable: jobs whose file exists are skipped; the job file is copied to
+    \texttt{<out>/config.toml} and a restart with different settings into the same folder is refused
+    \item order: seeds outermost $\to$ complete maps of device 0, 1, \ldots\ are finished first, so partial
+    results can already be analysed
+    \item \texttt{--dry-run} only counts the jobs; long runs in the background with
+    \texttt{nohup \ldots\ > logs/rq1\_map.log}, progress and ETA are printed to the log
+    \item \texttt{results/} and \texttt{logs/} are in \texttt{.gitignore} (large, reproducible from the configs)
+\end{itemize}
+
+\subsection*{19.11 \quad IPC computation in \texttt{qrc/ipc.py}}
+\phantomsection
+\label{sec:ipc-implementation}
+
+\subsubsection*{1. Legendre targets (\texttt{legendre\_targets})}
+\begin{itemize}
+    \item targets: products of normalised Legendre polynomials $\sqrt{2n+1}\,P_n$ of delayed inputs, over all
+    delays and degrees $\to$ (orthonormal) basis of the Hilbert space of fading memory functions of the input
+    ($u \sim \mathcal{U}(-1,1)$: zero mean, unit variance)
+    \item computation:
+    \begin{enumerate}
+        \item maximal delay per degree: \texttt{delays} $= (d_1, d_2, d_3) = (20, 10, 7)$ for degree 1, 2, 3
+        \item table of delayed inputs \texttt{lagged} $= (u_{-0}, u_{-1}, u_{-2}, \ldots)$ with the notation
+        $u_{-k} := u_{t-k}$ of ``Tackling sampling noise \ldots'', i.e.\
+        \texttt{lagged[t, k]} $= u[T_{wash} + t - k]$, shape $(M, \max(\text{delays}) + 1)$
+        \item for every degree $d$ write down every combination (multiset) of delays $\le d_d$ via
+        \texttt{combinations\_with\_replacement}: degree 1: $(0), (1), \ldots$; degree 2: $(0,0), (0,1), \ldots$;
+        degree 3: $(0,0,0), (0,0,1), \ldots$
+        \item for every combination determine the Legendre polynomial: every distinct delay $k$ in the
+        combination with multiplicity $m_k$ gives a factor $\sqrt{2m_k+1}\,P_{m_k}(u_{-k})$, e.g.\
+        \begin{equation*}
+            (0, 0, 3) \;\to\; y(t) = \sqrt{5}\,P_2(u_{t})\cdot\sqrt{3}\,P_1(u_{t-3})
+        \end{equation*}
+    \end{enumerate}
+    \item output: $Y$ with shape $(M, L)$ ($L$ = number of Legendre targets, column $l$ = target time series
+    $y_l$) and the table $[(\text{degree}, \text{combination}), \ldots]$ describing the columns
+\end{itemize}
+
+\subsubsection*{2. Capacity computation (\texttt{capacities})}
+From the features $x(t)$ to $h$, $G$, $V$ and $R$:
+\begin{itemize}
+    \item $h(t) = (1, x_1(t), \ldots, x_N(t))$, stacked as $h$ with shape $(M, N+1)$
+    \item $G = \frac{1}{M} h^T h = \langle h h^T \rangle$, shape $(N+1) \times (N+1)$
+    \item $V = \begin{pmatrix} 0 & 0 \\ 0 & \langle \Sigma(t) \rangle \end{pmatrix}$ (shot covariance, no
+    noise on the constant)
+    \item $R = \frac{1}{M} h^T Y = \langle h\, y^T \rangle$, shape $(N+1) \times L$: column $l$ is the overlap
+    of the features with target $y_l$
+    \item $A = G + V/S$ ($S = \infty$: $A = G$), inverted with the pseudo-inverse \texttt{\_pinv\_psd}
+\end{itemize}
+
+Why the capacities are the diagonal of $R^T A^{-1} R$:
+\begin{itemize}
+    \item the targets are orthonormal, $\frac{1}{M} Y^T Y \approx \mathbb{I}_L$, and (if the target set is
+    complete) span the features: $h \approx Y c$ with coefficients $c = \frac{1}{M} Y^T h = R^T$. Hence
+    \begin{equation*}
+        G = \frac{1}{M} h^T h \approx \frac{1}{M} R\, Y^T Y R^T \approx R R^T
+    \end{equation*}
+    (with this convention the factor $\frac{1}{M}$ is in $R$, consistent with the code)
+    \item then, with $\ket{y_l} := e_l$ the $l$-th unit vector in target space ($R\ket{y_l}$ = column $l$ of $R$):
+    \begin{equation*}
+        \operatorname{Tr}(A^{-1} G) \approx \operatorname{Tr}(A^{-1} R R^T) = \operatorname{Tr}(R^T A^{-1} R)
+        = \sum_{l=1}^{L} \bra{y_l} R^T A^{-1} R \ket{y_l}
+    \end{equation*}
+    \item since the $y_l$ are the Legendre targets, $C_l = \bra{y_l} R^T A^{-1} R \ket{y_l}$ is the capacity
+    for the Legendre basis polynomial $y_l$, and the total IPC is $\sum_l C_l \approx \operatorname{Tr}(A^{-1}G)$
+    (at $S = \infty$: $\operatorname{Tr}(G^+ G) = \operatorname{rank}\, G \le N + 1$, the constant belongs
+    to degree 0, which is not a target $\to$ total $\le N$)
+    \item in the code only the diagonal is computed:
+    \texttt{np.einsum("kl,kl->l", R\_A, Minv @ R\_B)} $= \sum_k (R_A)_{kl} (A^{-1} R_B)_{kl}
+    = (R_A^T A^{-1} R_B)_{ll}$ $\to$ entry $l$ is the capacity of polynomial $y_l$
+    \item cross-fitting: $R_A$ and $R_B$ from the first and second half of the samples (with a gap), each
+    normalised by the number of samples in its half; removes the upward bias $\approx (N+1)/M$ per target
+    of $R^T A^{-1} R$ with one $R$
+\end{itemize}

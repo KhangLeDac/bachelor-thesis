@@ -49,3 +49,7 @@ report/diary/diary.pdf
 
 # Third-party papers (copyright, large binaries)
 literature/**/*.pdf
+
+# Simulation results and run logs (large, reproducible from configs/)
+results/
+logs/

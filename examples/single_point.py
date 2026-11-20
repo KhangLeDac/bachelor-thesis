@@ -2,7 +2,7 @@
 
     uv run python examples/single_point.py --lam 1.0 --p 0.3
 
-Saves figures/single_point.png and prints the capacities.
+Saves examples/figures/single_point.png and prints the capacities.
 """
 
 import os
@@ -21,6 +21,8 @@ import numpy as np
 from qrc.ipc import capacities, legendre_targets, summarize
 from qrc.model import Params
 from qrc.reservoir import simulate
+
+FIGURES = Path(__file__).resolve().parent / "figures"   # examples/figures, independent of the working directory
 
 
 def main():
@@ -58,9 +60,9 @@ def main():
     fig.suptitle(f"N = {params.n}, lam = {args.lam}, p = {args.p}, eps = {params.eps}, tau = {params.tau}, "
                  f"seed = {params.seed}")
     fig.tight_layout()
-    Path("figures").mkdir(exist_ok=True)
-    fig.savefig("figures/single_point.png", dpi=150)
-    print("saved figures/single_point.png")
+    FIGURES.mkdir(exist_ok=True)
+    fig.savefig(FIGURES / "single_point.png", dpi=150)
+    print("saved examples/figures/single_point.png")
 
 
 if __name__ == "__main__":

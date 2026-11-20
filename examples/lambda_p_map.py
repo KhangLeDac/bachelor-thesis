@@ -3,7 +3,7 @@ averaged over several devices (coupling seeds). Grid points run in parallel proc
 
     uv run python examples/lambda_p_map.py --S 1e4 --devices 3
 
-Saves figures/lambda_p_map.png.
+Saves examples/figures/lambda_p_map.png.
 """
 
 import os
@@ -24,6 +24,8 @@ import numpy as np
 from qrc.ipc import ipc, summarize
 from qrc.model import Params
 from qrc.reservoir import simulate
+
+FIGURES = Path(__file__).resolve().parent / "figures"   # examples/figures, independent of the working directory
 
 LAMS = (0.2, 0.4, 0.6, 0.8, 1.0)
 PS = (0.02, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9)
@@ -61,9 +63,9 @@ def main():
         ax.text(j, i, f"{mean[i, j]:.2f}", ha="center", va="center", color="w", fontsize=8)
     fig.colorbar(im, ax=ax, label="total IPC")
     fig.tight_layout()
-    Path("figures").mkdir(exist_ok=True)
-    fig.savefig("figures/lambda_p_map.png", dpi=150)
-    print("saved figures/lambda_p_map.png")
+    FIGURES.mkdir(exist_ok=True)
+    fig.savefig(FIGURES / "lambda_p_map.png", dpi=150)
+    print("saved examples/figures/lambda_p_map.png")
 
 
 if __name__ == "__main__":

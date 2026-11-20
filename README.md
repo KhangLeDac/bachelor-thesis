@@ -70,7 +70,8 @@ The project uses [uv](https://docs.astral.sh/uv/):
     uv run python examples/single_point.py       # IPC vs S for one (λ, p)
     uv run python examples/lambda_p_map.py       # total IPC over a (λ, p) grid at fixed S
 
-Figures go to `figures/`. Both examples take `--help`.
+Figures go to `examples/figures/`, job files are in `examples/configs/`. Both examples take `--help`.
+The RQ1 study has its own folder `rq1/` (scripts, configs, results, figures).
 
 **Runtime.** For 64 × 64 matrices, multithreaded BLAS is much slower than a single thread (about 40× on a
 busy machine). The examples set `OMP_NUM_THREADS=1` (and the OpenBLAS/MKL equivalents) before numpy is

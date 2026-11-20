@@ -187,3 +187,43 @@ Read the theoretical analysis part (Sec. II) to understand the shot procedure
         \item $G$ and $V$ can be estimated from stochastic samples, so it is directly applicable in experiment
     \end{itemize}
 \end{itemize}
+
+\subsection*{18.11 \quad Paper: ``Information processing capacity of dynamical systems''}
+\phantomsection
+\label{sec:ipc-paper}
+(not finished yet)
+\begin{itemize}
+    \item setting: input sequence $u(t)$, drawn i.i.d.\ from a distribution $p(u)$; the system has $N$ state
+    variables (output functions) $x_i(t)$
+    \item function on the $h$ previous inputs:
+    \begin{itemize}
+        \item $u^{-h}(t) = \big(u(t-h+1), \ldots, u(t-1), u(t)\big)$
+        \item target: $z(t) = z\big(u^{-h}(t)\big)$
+        \item estimate by a linear readout of the states: $\hat{z}(t) = \sum_{i=1}^{N} W_i\, x_i(t)$
+    \end{itemize}
+    \item capacity of the system to reconstruct $z$:
+    \begin{equation*}
+        C[z] = 1 - \frac{\min_W \operatorname{MSE}[\hat{z}]}{\langle z^2 \rangle},
+        \qquad \operatorname{MSE}[\hat{z}] = \big\langle (z - \hat{z})^2 \big\rangle
+    \end{equation*}
+    \begin{itemize}
+        \item $\langle \cdot \rangle$: average over time (equivalently over the input distribution)
+        \item $0 \le C[z] \le 1$: $C = 1$ perfect reconstruction, $C = 0$ nothing of $z$ can be reconstructed
+        \item optimal weights in closed form via the covariance matrix of the states
+        $\langle x x^T \rangle$:
+        $C[z] = \frac{\langle z\, x \rangle^T \langle x x^T \rangle^{-1} \langle x\, z \rangle}{\langle z^2 \rangle}$
+    \end{itemize}
+    \item Hilbert space of functions of the input history:
+    \begin{itemize}
+        \item inner product $\langle z, z' \rangle = \langle z\, z' \rangle = \mathbb{E}_u[z\, z']$
+        (w.r.t.\ the input distribution)
+        \item orthogonality: two orthogonal targets measure independent parts of the information processing
+        $\to$ capacities of an orthonormal basis $\{z_\ell\}$ can be summed without double counting
+        \item basis: products of orthogonal polynomials (Legendre for uniform $u$) of the delayed inputs
+        $\to$ split into degrees (linear memory, nonlinear parts); this is what \texttt{qrc/ipc.py} uses
+    \end{itemize}
+    \item number of output functions: with $N$ linearly independent state variables the readout spans an
+    $N$-dimensional subspace $\to$ total capacity $C_{tot} = \sum_\ell C[z_\ell] \le N$
+    \item fading memory property: the state depends only on a finite (effective) past of the input, not on
+    the initial condition $\to$ needed for $C_{tot} = N$ (all capacity is used for functions of the input)
+\end{itemize}

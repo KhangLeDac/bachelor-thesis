@@ -5,13 +5,13 @@ estimated from S drawn shots per step (qrc.sampling.noisy_features), a linear re
 half and tested on the second half (qrc.sampling.readout_capacity), and the result is compared with the
 analytic capacity C(S) = R^T (G + V/S)^+ R (qrc.ipc.capacities). Each S is sampled with several shot seeds.
 
-    uv run python examples/shot_check.py --config configs/shot_check.toml
-    uv run python examples/shot_check.py --config configs/shot_check.toml --M 100000
+    uv run python examples/shot_check.py --config examples/configs/shot_check.toml
+    uv run python examples/shot_check.py --config examples/configs/shot_check.toml --M 100000
     uv run python examples/shot_check.py --points 0.8,0.7 0.8,0.1      # without a job file
 
 The jobs (points, shot numbers, M, ...) are best listed in a TOML job file (--config); command-line options
-override it. Saves figures/<config name>.png and .npz (figures/shot_check.* without a config file) and prints
-a table.
+override it. Saves examples/figures/<config name>.png and .npz (examples/figures/shot_check.* without a config
+file) and prints a table.
 """
 
 import os
@@ -32,6 +32,8 @@ import numpy as np
 from qrc.ipc import capacities, legendre_targets, summarize
 from qrc.model import Params
 from qrc.reservoir import simulate
+
+FIGURES = Path(__file__).resolve().parent / "figures"   # examples/figures, independent of the working directory
 from qrc.sampling import noisy_features, readout_capacity
 
 KEYS = ("total", "degree1", "degree2", "degree3")
@@ -69,7 +71,7 @@ DEFAULTS = {"points": [(0.8, 0.7), (0.8, 0.1), (0.2, 0.5), (1.0, 0.5)], "shots":
 
 
 def load_config(path):
-    """Settings from a TOML job file (see configs/shot_check.toml); points become (lam, p) tuples."""
+    """Settings from a TOML job file (see examples/configs/shot_check.toml); points become (lam, p) tuples."""
     with open(path, "rb") as f:
         cfg = tomllib.load(f)
     unknown = set(cfg) - set(DEFAULTS)
@@ -131,14 +133,14 @@ def main():
     axes[0, 0].legend(title="line: analytic\npoints: sampled", fontsize=8)
     fig.suptitle(f"analytic vs sampled IPC, M = {args.M}, seed = {args.seed}, dotted: S = inf")
     fig.tight_layout()
-    Path("figures").mkdir(exist_ok=True)
-    fig.savefig(f"figures/{name}.png", dpi=150)
-    np.savez(f"figures/{name}.npz", shots=shots, keys=KEYS,
+    FIGURES.mkdir(exist_ok=True)
+    fig.savefig(FIGURES / f"{name}.png", dpi=150)
+    np.savez(FIGURES / f"{name}.npz", shots=shots, keys=KEYS,
              points=np.array([(r["lam"], r["p"]) for r in results]),
              analytic=np.array([r["analytic"] for r in results]),
              sampled=np.array([r["sampled"] for r in results]),
              ideal=np.array([r["ideal"] for r in results]))
-    print(f"saved figures/{name}.png and figures/{name}.npz")
+    print(f"saved examples/figures/{name}.png and examples/figures/{name}.npz")
 
 
 if __name__ == "__main__":
