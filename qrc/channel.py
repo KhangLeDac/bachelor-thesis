@@ -17,11 +17,16 @@ Averaged over the measurement outcomes, the measurement followed by the reset ma
 import numpy as np
 
 
-def check_strengths(lam: float, p: float) -> None:
-    """Raise ValueError unless lam and p are finite numbers in [0, 1]."""
+def check_strengths(lam, p) -> None:
+    """Raise ValueError unless lam and p are finite numbers in [0, 1].
+
+    Both may also be arrays (e.g. a whole sequence p_t of input-dependent reset strengths);
+    then every entry is checked."""
     for name, value in (("lam", lam), ("p", p)):
-        if not (np.isfinite(value) and 0.0 <= value <= 1.0):
-            raise ValueError(f"{name} must be in [0, 1], got {value}")
+        v = np.asarray(value, dtype=float)
+        if not (np.all(np.isfinite(v)) and np.all((v >= 0.0) & (v <= 1.0))):
+            shown = value if v.ndim == 0 else f"values in [{np.nanmin(v)}, {np.nanmax(v)}]"
+            raise ValueError(f"{name} must be in [0, 1], got {shown}")
 
 
 def kraus_measure(lam: float) -> list[np.ndarray]:

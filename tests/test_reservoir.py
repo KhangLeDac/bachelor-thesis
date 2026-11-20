@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from qrc.model import Params
-from qrc.reservoir import features, shot_covariance, simulate, trace_distance_curve
+from qrc.reservoir import features, reset_sequence, shot_covariance, simulate, trace_distance_curve
 
 SMALL = Params(n=3, eps=0.5)
 
@@ -47,3 +47,31 @@ def test_trace_distance_curve_decreases_to_zero():
     curve = trace_distance_curve(SMALL, 1.0, 0.5, u)
     assert curve.shape == (400,)
     assert curve[-1] < 1e-8 < curve[0]
+
+
+def test_constant_function_reproduces_constant_p():
+    a = simulate(SMALL, lam=0.8, p=0.7, M=300, T_wash=300)
+    b = simulate(SMALL, lam=0.8, p=lambda u: np.full_like(u, 0.7), M=300, T_wash=300)
+    assert np.array_equal(a.pop, b.pop) and np.all(b.p_seq == 0.7)
+
+
+def test_input_dependent_reset_sequence_and_effect():
+    f = lambda u: 0.5 + 0.3 * u
+    run = simulate(SMALL, lam=0.8, p=f, M=300, T_wash=300)
+    assert np.allclose(run.p_seq, f(run.u))           # p_t = f(u_t), aligned with u
+    const = simulate(SMALL, lam=0.8, p=0.5, M=300, T_wash=300)
+    assert np.array_equal(run.u, const.u)             # same inputs: paired comparison
+    assert not np.allclose(run.pop, const.pop)
+
+
+def test_reset_function_out_of_range():
+    with pytest.raises(ValueError, match="p must be in"):
+        simulate(SMALL, lam=0.8, p=lambda u: 0.5 + u, M=10, T_wash=10)
+    with pytest.raises(ValueError, match="shape"):
+        reset_sequence(lambda u: 0.5, np.zeros(5))
+
+
+def test_trace_distance_curve_with_function():
+    u = np.random.default_rng(0).uniform(-1, 1, 200)
+    assert np.allclose(trace_distance_curve(SMALL, 1.0, lambda v: np.full_like(v, 0.5), u),
+                       trace_distance_curve(SMALL, 1.0, 0.5, u))

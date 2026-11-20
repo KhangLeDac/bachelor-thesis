@@ -62,3 +62,11 @@ def test_full_reset_for_any_lambda():
     target = np.zeros((8, 8)); target[0, 0] = 1.0
     for lam in (0.0, 0.5):
         assert np.allclose(measure_reset(random_density_matrix(8, rng), 3, lam, 1.0), target, atol=1e-12)
+
+
+def test_check_strengths_arrays():
+    check_strengths(0.5, np.array([0.0, 0.3, 1.0]))
+    with pytest.raises(ValueError, match="p must be in"):
+        check_strengths(0.5, np.array([0.2, 1.1]))
+    with pytest.raises(ValueError, match="p must be in"):
+        check_strengths(0.5, np.array([0.2, np.nan]))
