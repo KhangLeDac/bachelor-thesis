@@ -90,3 +90,10 @@ def test_ipc_quiet_when_memory_decayed():
     with warnings.catch_warnings():
         warnings.simplefilter("error")
         ipc(run, S=np.inf, delays=(5, 3, 2))
+
+
+def test_summarize_higher_degrees():
+    table = [(1, (0,)), (2, (0, 0)), (4, (0, 0, 0, 0))]
+    s = summarize(np.array([0.5, 0.2, 0.1]), table)
+    assert np.isclose(s["degree4"], 0.1) and np.isclose(s["degree3"], 0.0)
+    assert np.isclose(s["total"], 0.8)

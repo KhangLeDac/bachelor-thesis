@@ -106,12 +106,14 @@ def capacities(x: np.ndarray, cov: np.ndarray, Y: np.ndarray, S: float, gap: int
 
 def summarize(C: np.ndarray, table) -> dict:
     """
-    Total capacity, totals per degree 1..3, and the linear memory function (degree-1 capacity per delay).
-    returns: out = {total, degree1, degree2, degree3, memory: array of length K}
+    Total capacity, totals per degree, and the linear memory function (degree-1 capacity per delay).
+    Degrees 1..3 are always present (0 if the table has no such targets); higher degrees are added
+    when the table contains them.
+    returns: out = {total, degree1, ..., degreeD, memory: array of length K}
     """
     degree = np.array([d for d, _ in table])
     out = {"total": float(C.sum())}
-    for d in (1, 2, 3):
+    for d in range(1, max(3, int(degree.max())) + 1):
         out[f"degree{d}"] = float(C[degree == d].sum())
     lin = sorted((delays[0], c) for (d, delays), c in zip(table, C) if d == 1)
     out["memory"] = np.array([c for _, c in lin])
