@@ -43,3 +43,6 @@ kind = "linear"           # p = p* + a sqrt(3) u
 
 [[shapes]]
 kind = "magnitude"        # p = p* + a sqrt(12) (|u| - 1/2)
+
+[[shapes]]
+kind = "quadratic"        # p = p* + a (3 sqrt(5)/2) (u^2 - 1/3)
