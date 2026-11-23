@@ -144,12 +144,12 @@ Same job system as `rq1/rq1_map.py` (TOML job file, one file per job, restartabl
   $\Delta C$.
 - All $f$ are built once before the run starts, so an invalid shape fails before any worker starts.
 - **Saved per job:** $S, \lambda, p_0$, shape, frac, $a$, $a_{\max}$, empirical mean and std of $p_t$,
-  total IPC, capacity per degree (1–5), memory function, washout distance, warnings, commit, runtime.
+  total IPC, capacity per degree (1–3), memory function, washout distance, warnings, commit, runtime.
   File name: `S1e+04_magnitude_frac+0.50_seed3.npz`.
 
 `phaseA.toml`: $S \in \{10^2, \ldots, 10^6, \infty\}$ with the RQ1 optima as baseline, shapes `linear`
 and `magnitude`, frac $\in \{\pm0.25, \pm0.5, \pm0.75, \pm1\}$, 10 devices, $M = 50000$, delays
-$(20, 10, 7, 5, 3)$ → 1020 jobs (about the size of the RQ1 map).
+$(20, 10, 7)$ (degrees 1–3, as in RQ1) → 1020 jobs (about the size of the RQ1 map).
 
 ```bash
 uv run python rq2/rq2_scan.py --config rq2/configs/phaseA.toml --dry-run

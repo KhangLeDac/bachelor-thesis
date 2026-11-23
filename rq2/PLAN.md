@@ -32,9 +32,9 @@ Plan in three phases:
 - **Fair comparison: same mean dissipation.** Every family is centred so that
   $\langle p_t \rangle_u = p^*_S$ for $u \sim \mathcal{U}(-1, 1)$. A gain then comes from *how* the
   reset is distributed over the inputs, not from more or less reset on average.
-- **Targets:** input-dependent reset makes the reservoir more nonlinear, so more capacity is expected in
-  high degrees. Use `delays = (20, 10, 7, 5, 3)` (degrees 1–5); with (20, 10, 7) the gain could be
-  hidden in the missing degrees (see 19.11: at ε = 0.5, degrees 4–5 held 1.2 of 5.9).
+- **Targets:** degrees 1–3, `delays = (20, 10, 7)`, as in RQ1 (decided 23.11). The total is then a
+  lower bound: an input-dependent reset makes the reservoir more nonlinear, and capacity in degrees ≥ 4
+  is not counted (see 19.11: at ε = 0.5, degrees 4–5 held 1.2 of 5.9; at the default ε = 0.1 less).
 
 ## 1. Code changes (before phase A)
 
