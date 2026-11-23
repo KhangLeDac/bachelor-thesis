@@ -470,3 +470,303 @@ Why the capacities are the diagonal of $R^T A^{-1} R$:
     normalised by the number of samples in its half; removes the upward bias $\approx (N+1)/M$ per target
     of $R^T A^{-1} R$ with one $R$
 \end{itemize}
+
+\subsection*{20.11 \quad RQ2: plan and input-dependent reset $p_t = f(u_t)$}
+
+\subsubsection*{1. Plan for RQ2}
+\phantomsection
+\label{sec:rq2-plan}
+Full plan in \texttt{rq2/PLAN.md}.
+
+\textbf{Questions:}
+\begin{enumerate}
+    \item Can the IPC at finite $S$ be increased by an input-dependent reset $p_t = f(u_t)$ instead of the best
+    constant $p^*_S$ of RQ1?
+    \item Is there a control rule for the dissipation, such that no hand-picked $f$ is necessary (the best $f$ is
+    probably system dependent)?
+\end{enumerate}
+
+\textbf{Procedure:}
+\begin{enumerate}
+    \item test different response functions $f$ and compare with the optimal constant $(\lambda^*_S, p^*_S)$
+    \item find the common behaviour of the good functions $\to$ qualitative rule (e.g.\ odd or even in $u$, reset
+    more or less for large $\lvert u\rvert$, dependence on $S$)
+    \item reproduce this behaviour with a rule that adapts by itself, candidates:
+    \begin{itemize}
+        \item input filter (discrete ODE): $z_t = (1-\alpha) z_{t-1} + \alpha\, g(u_t)$, $p_t = h(z_t)$, i.e.\
+        $\dot z = -\alpha (z - g(u))$; the fixed $f$ is the limit $\alpha = 1$
+        \item measurement feedback: $p_t$ depends on the measured features $\hat x_t$
+        \item adaptive parameters: update the parameters of $f$ online by a gradient step on a task-independent
+        proxy of the capacity, e.g.\ $\operatorname{Tr}\big((G + V/S)^{-1} G\big)$
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Baseline and conventions:}
+\begin{itemize}
+    \item baseline: for every $S$ the RQ1 optimum $(\lambda^*_S, p^*_S)$ (mean total IPC over 10 devices):
+    \begin{center}
+    \begin{tabular}{cccc}
+        \hline
+        $S$ & $\lambda^*_S$ & $p^*_S$ & $C$ \\
+        \hline
+        $10^2$ & 1.0 & 0.95 & 0.55 \\
+        $10^3$ & 1.0 & 0.95 & 1.10 \\
+        $10^4$ & 1.0 & 0.80 & 1.79 \\
+        $10^5$ & 0.8 & 0.70 & 2.84 \\
+        $10^6$ & 0.4 & 0.25 & 4.50 \\
+        $\infty$ & 0.7 & 0.85 & 5.98 \\
+        \hline
+    \end{tabular}
+    \end{center}
+    $\to$ from $S = 10^2$ to $10^6$: few shots favour a projective measurement and a strong reset, many shots a
+    weaker measurement and a weaker reset; $S = \infty$ does not follow this trend ($p^* = 0.85$).
+    $S = 10^2, 10^3$ lie at the edge of the RQ1 grid
+    \item every result is reported as the gain $\Delta C = C[f] - C[p^*_S]$, computed on the same device and the
+    same input sequence (paired comparison $\to$ the noise of $\Delta C$ is much smaller than that of $C$)
+    \item $\lambda$ is kept at $\lambda^*_S$, so only the dissipation changes
+    \item timing: the features of step $t$ are read from $\sigma_t$ before the reset, so $p_t = f(u_t)$ first acts
+    on the features of step $t+1$
+    \item range: $f$ must map $[-1, 1] \to [0, 1]$; functions outside are excluded (not clipped)
+    \item fair comparison: every $f$ has the same mean reset $\langle p_t \rangle_u = p^*_S$, so a gain comes from
+    \emph{how} the reset is distributed over the inputs, not from more or less reset on average
+\end{itemize}
+
+\subsubsection*{2. Implementation}
+\phantomsection
+\label{sec:rq2-implementation}
+Where $p_t$ enters one step:
+\begin{equation*}
+    \rho_{t-1} \;\xrightarrow{U(u_t)}\; \sigma_t = U(u_t)\,\rho_{t-1}\,U(u_t)^\dagger
+    \;\xrightarrow{\text{read}}\; x_i(t) = \lambda \langle Z_i \rangle_{\sigma_t}
+    \;\xrightarrow{\mathcal{M}_\lambda,\; \mathcal{R}_{p_t}}\; \rho_t, \qquad p_t = f(u_t)
+\end{equation*}
+\begin{itemize}
+    \item per spin the same map as before, only with a different number in every step:
+    $r_{00} \to r_{00} + p_t r_{11}$, $r_{11} \to (1-p_t) r_{11}$, coherences $\times \sqrt{1-p_t}\sqrt{1-\lambda^2}$
+    \item $p_t$ depends only on the input, not on measurement outcomes $\to$ the outcome-averaged $\rho$ can still
+    be propagated exactly, no trajectories needed
+\end{itemize}
+
+\textbf{\texttt{qrc/channel.py}: \texttt{check\_strengths} accepts arrays}
+\begin{itemize}
+    \item $\lambda$ and $p$ may be numbers or arrays; every entry must be finite and in $[0, 1]$
+    \item purpose: the whole sequence $p_1, \ldots, p_{T_{wash}+M}$ is checked once before the simulation,
+    so an invalid $f$ fails immediately and not in the middle of a run
+    \item the physics (\texttt{measure\_reset\_spin}, \texttt{measure\_reset}, \texttt{step}) is unchanged: it already
+    takes a scalar $p$ per call, the loop now passes a different one every step
+\end{itemize}
+
+\textbf{\texttt{qrc/reservoir.py}: new function \texttt{reset\_sequence(p, u)}}
+\begin{itemize}
+    \item computes $p_t$ for all $t$ at once:
+    \begin{itemize}
+        \item $p$ a number $\to$ $p_t = p$ for every step (RQ1)
+        \item $p$ a function $\to$ $p_t = f(u_t)$, evaluated on the whole input array ($f$ must be vectorised:
+        array in, array of the same shape out)
+    \end{itemize}
+    \item checks the shape and the range $[0, 1]$ (\texttt{check\_strengths})
+    \item \texttt{simulate(params, lam, p, ...)}: draws $u$ as before, then \texttt{p\_seq = reset\_sequence(p, u)};
+    washout: \texttt{step(rho, U(u\_t), n, lam, p\_seq[t])}, main loop:
+    \texttt{measure\_reset(sigma, n, lam, p\_seq[T\_wash + t])}
+    \item the inputs do not depend on $p$ $\to$ runs with different $p$ and the same \texttt{input\_seed} see the
+    identical input sequence (paired comparison)
+    \item \texttt{trace\_distance\_curve} has the same change (memory time with input-dependent reset)
+    \item \texttt{Run} stores the new field \texttt{p\_seq} (aligned with \texttt{u})
+    \item test: $f \equiv 0.7$ gives bitwise the same populations as $p = 0.7$ $\to$ RQ1 is a special case
+\end{itemize}
+
+\textbf{\texttt{qrc/reset.py}: class \texttt{Reset} for the response functions $f(u)$}
+
+a) Mathematical constraints and their purposes. Every response function has the form
+\begin{equation*}
+    f(u) = p_0 + a\, g(u), \qquad \langle g \rangle = 0, \quad \langle g^2 \rangle = 1 \qquad (u \sim \mathcal{U}(-1, 1))
+\end{equation*}
+\begin{itemize}
+    \item $\langle g \rangle = 0$ $\to$ $\langle p_t \rangle = p_0$ for every $a$: with $p_0 = p^*_S$ the comparison
+    with the constant baseline is at equal average dissipation
+    \item $\langle g^2 \rangle = 1$ $\to$ $a$ is the standard deviation of $p_t$: strengths of different shapes are
+    directly comparable
+    \item $0 \le f(u) \le 1$ on $[-1, 1]$ (reset strength is a probability). For $a > 0$ this gives
+    \begin{equation*}
+        a \le a_{\max}^{+} = \min\left( \frac{1 - p_0}{\max g},\; \frac{p_0}{-\min g} \right),
+    \end{equation*}
+    analogously for $a < 0$. Functions outside are rejected, not clipped, so every tested $f$ is exactly its formula
+    \item $g$ is obtained from a raw shape $h$ by centring and normalising: $g = (h - \langle h \rangle) / \operatorname{std}(h)$
+\end{itemize}
+\begin{center}
+\begin{tabular}{p{0.15\linewidth}p{0.3\linewidth}p{0.27\linewidth}p{0.15\linewidth}}
+    \hline
+    \texttt{kind} & raw shape $h(u)$ & $g(u)$ & parameters \\
+    \hline
+    \texttt{constant} & -- & $0$ & -- \\
+    \texttt{linear} & $u$ & $\sqrt{3}\, u$ & -- \\
+    \texttt{magnitude} & $\lvert u \rvert$ & $\sqrt{12}\,(\lvert u \rvert - \frac12)$ & -- \\
+    \texttt{quadratic} & $u^2$ & $\sqrt{45/4}\,(u^2 - \frac13)$ & -- \\
+    \texttt{sigmoid} & $1 / (1 + e^{-k(\lvert u \rvert - u_0)})$ & numerically & $k$, $u_0$ \\
+    \texttt{legendre} & $\sum_n c_n \sqrt{2n+1}\, P_n(u)$ & numerically & $c_1, c_2, \ldots$ \\
+    \hline
+\end{tabular}
+\end{center}
+odd shapes (\texttt{linear}) respond to the sign of $u$, even shapes (\texttt{magnitude}, \texttt{quadratic},
+\texttt{sigmoid}) to its size; the Legendre form contains all of them and uses the same basis as the IPC targets.
+
+b) Implementation of the class:
+\begin{itemize}
+    \item \texttt{Reset(kind, p0, a, **shape)}: \texttt{kind} selects the family $h$, \texttt{shape} holds its
+    parameters (empty for linear, magnitude, quadratic; $k, u_0$ for sigmoid; \texttt{coefs} for Legendre)
+    \item \texttt{\_\_init\_\_}: checks \texttt{kind} and the parameters, computes $\langle h \rangle$ and
+    $\operatorname{std}(h)$ with Gauss--Legendre quadrature (200 nodes on $[-1, 0]$ and on $[0, 1]$ separately $\to$
+    exact for polynomials and for $\lvert u \rvert$ with its kink at 0), then checks the range of $f$
+    \item \texttt{g(u)}: normalised shape $g = (h(u) - \langle h \rangle) / \operatorname{std}(h)$
+    \item \texttt{\_\_call\_\_(u)}: $f(u) = p_0 + a\, g(u)$, vectorised $\to$ can be passed directly as \texttt{p} to
+    \texttt{simulate}
+    \item \texttt{a\_max(sign)}: largest $\lvert a \rvert$ with the given sign such that $f$ stays in $[0, 1]$
+    (min / max of $g$ on a grid of 20001 points)
+    \item \texttt{from\_fraction(kind, p0, frac)}: $a = \text{frac} \cdot a_{\max}^{\pm}$ with
+    $\text{frac} \in [-1, 1]$ $\to$ always valid; $\pm 1$ uses the full allowed range, $0$ is the constant $p_0$.
+    Useful because $a_{\max}$ depends on $p_0$, which differs between the $S$
+    \item \texttt{p\_range()}, \texttt{describe()}: range of $f$ on $[-1, 1]$ and a readable description
+    \item class instead of a lambda: worker processes (\texttt{ProcessPoolExecutor}) receive the jobs by pickling,
+    lambdas cannot be pickled
+    \item example: \texttt{f = Reset.from\_fraction("magnitude", p0=0.8, frac=0.5)}, then
+    \texttt{run = simulate(params, lam=1.0, p=f)} $\to$ \texttt{run.p\_seq[t]} $= f(u_t)$
+\end{itemize}
+
+\subsubsection*{3. Literature for the choice of $f$ (to look up)}
+\phantomsection
+\label{sec:rq2-literature}
+\textbf{Zero mean, unit variance and the Legendre basis} (orthogonal expansions):
+\begin{itemize}
+    \item D.~Xiu, G.~E.~Karniadakis, ``The Wiener--Askey polynomial chaos for stochastic differential equations'',
+    SIAM J.\ Sci.\ Comput.\ \textbf{24}(2), 619--644 (2002)\\
+    $\to$ the orthogonal polynomial family is matched to the input distribution (uniform $\to$ Legendre,
+    Gaussian $\to$ Hermite): Wiener--Askey scheme / generalized polynomial chaos
+    \item J.~Dambre, D.~Verstraeten, B.~Schrauwen, S.~Massar, ``Information processing capacity of dynamical
+    systems'', Sci.\ Rep.\ \textbf{2}, 514 (2012), doi:10.1038/srep00514\\
+    $\to$ the same Legendre basis for the IPC targets with uniform inputs; free on PubMed Central (PMC3400147)
+    \item I.~M.~Sobol', ``Global sensitivity indices for nonlinear mathematical models and their Monte Carlo
+    estimates'', Math.\ Comput.\ Simul.\ \textbf{55}(1--3), 271--280 (2001)\\
+    $\to$ decomposition of a function of random inputs into orthogonal zero-mean parts (Hoeffding / Sobol'
+    decomposition, functional ANOVA); justifies reading the coefficients $a_n$ as independent directions
+    (``response spectrum''). Original: Sobol', Matem.\ Mod.\ \textbf{2}(1), 112--118 (1990), English translation
+    in Math.\ Model.\ Comput.\ Exp.\ \textbf{1}, 407--414 (1993) (exact translated title differs between sources)
+    \item together with Parseval for an orthonormal expansion $f = p_0 + \sum_n a_n \sqrt{2n+1} P_n$:
+    $\langle f \rangle = p_0$, $\operatorname{Var}(f) = \sum_n a_n^2$ $\to$ $p_0$ is the mean and $a$ the standard
+    deviation of $p_t$
+\end{itemize}
+
+\textbf{Input-dependent reset as a forget gate} (motivation for $p_t = f(u_t)$):
+\begin{itemize}
+    \item F.~A.~Gers, J.~Schmidhuber, F.~Cummins, ``Learning to forget: continual prediction with LSTM'', Neural
+    Comput.\ \textbf{12}(10), 2451--2471 (2000), doi:10.1162/089976600300015015\\
+    $\to$ introduces the forget gate: an input-dependent factor that decides how much of the stored state is kept,
+    like $(1 - p_t)$ in the reset; fixed decay fails on continual input streams, the adaptive gate solves them
+    \item C.~Tallec, Y.~Ollivier, ``Can recurrent neural networks warp time?'', ICLR 2018, arXiv:1804.11188\\
+    $\to$ gates follow from invariance under time warping: a gate is an input-dependent leak rate of an ODE,
+    $\dot h = -\alpha(t) h + \ldots$ $\to$ closest to the ODE control rule of phase C
+    \item H.~Jaeger, M.~Luko\v{s}evi\v{c}ius, D.~Popovici, U.~Siewert, ``Optimization and applications of echo state
+    networks with leaky-integrator neurons'', Neural Netw.\ \textbf{20}(3), 335--352 (2007),
+    doi:10.1016/j.neunet.2007.04.016\\
+    $\to$ the constant version in reservoir computing: leaky-integrator ESN with a fixed leaking rate (analogue of
+    a constant $p$), optimisation of the leaking rate; PDF: \url{https://www.ai.rug.nl/minds/uploads/leakyESN.pdf}
+\end{itemize}
+
+\subsection*{23.11 \quad RQ2: \texttt{rq2\_scan.py} and \texttt{rq2\_compare.py}}
+\phantomsection
+\label{sec:rq2-scan-compare}
+
+\subsubsection*{1. \texttt{rq2/rq2\_scan.py}: running the jobs}
+Computes the IPC for the constant baseline $p^*_S$ and for input-dependent resets $p_t = f(u_t)$ and saves every
+result to its own file; no analysis. Same job system as \texttt{rq1\_map.py} (\hyperref[sec:job-system]{entry of
+18.11}): TOML job file, one file per job, restartable, parallel.
+
+\textbf{Job file} (e.g.\ \texttt{rq2/configs/phaseA.toml}):
+\begin{center}
+\begin{tabular}{p{0.2\linewidth}p{0.7\linewidth}}
+    \hline
+    key & meaning \\
+    \hline
+    \texttt{[[baseline]]} & per $S$: the RQ1 optimum $(\lambda^*_S, p^*_S)$ \\
+    \texttt{[[shapes]]} & response shapes to test, e.g.\ \texttt{linear}, \texttt{magnitude} \\
+    \texttt{fracs} & strengths $a = \text{frac} \cdot a_{\max}$ with $\text{frac} \in [-1, 1]$ ($\pm 1$: full allowed
+    range, the sign gives the direction of the response) \\
+    \texttt{seeds} & devices (coupling seeds) \\
+    \texttt{M}, \texttt{T\_wash}, \texttt{delays} & samples, washout steps, largest delay per degree
+    ($(20, 10, 7)$: degrees 1--3) \\
+    \texttt{out} & results folder \\
+    \hline
+\end{tabular}
+\end{center}
+
+\textbf{Total number of jobs:} for every device and every $S$ one constant baseline job ($\text{frac} = 0$, it does
+not depend on the shape) plus one job per shape and non-zero frac:
+\begin{equation*}
+    N_{\text{jobs}} = N_{\text{seeds}} \cdot N_{\text{baselines}} \cdot \big(1 + N_{\text{shapes}} \cdot N_{\text{fracs} \neq 0}\big)
+\end{equation*}
+\begin{itemize}
+    \item \texttt{phaseA.toml}: $10 \cdot 6 \cdot (1 + 2 \cdot 8) = 1020$ jobs
+    \item \texttt{linear.toml}: $10 \cdot 5 \cdot (1 + 1 \cdot 8) = 450$ jobs
+    \item \texttt{--dry-run} only counts the jobs
+\end{itemize}
+
+\textbf{One job} $=$ one $(S, \text{shape}, \text{frac}, \text{device})$:
+\begin{enumerate}
+    \item build $f(u) = p^*_S + a\, g(u)$ with \texttt{Reset.from\_fraction(shape, $p^*_S$, frac)}
+    $\to$ $\langle p_t \rangle = p^*_S$, $p_t \in [0, 1]$
+    \item simulate with $\lambda^*_S$ and $p_t = f(u_t)$ (\texttt{simulate}); all jobs use the same input sequence
+    (\texttt{input\_seed} 0) $\to$ paired comparison
+    \item build the Legendre targets and compute the capacities at this $S$, summarise (total IPC, capacity per
+    degree, linear memory function)
+    \item save to its own file, e.g.\ \texttt{S1e+04\_magnitude\_frac+0.50\_seed3.npz}, together with $a$,
+    $a_{\max}$, mean and std of $p_t$, washout distance, warnings, git commit, runtime
+\end{enumerate}
+Difference to RQ1: there one simulation per $(\lambda, p, \text{device})$ served all $S$; here $\lambda^*_S$,
+$p^*_S$ and therefore $f$ depend on $S$ $\to$ every $S$ needs its own simulation.
+
+\subsubsection*{2. \texttt{rq2/rq2\_compare.py}: analysis}
+Only reads the result files (no simulation, works also on partial results):
+\texttt{uv run python rq2/rq2\_compare.py --config rq2/configs/phaseA.toml [--frac 1]}
+\begin{enumerate}
+    \item \textbf{load results:} all \texttt{.npz} files of the results folder $\to$ for every
+    $(S, \text{shape}, \text{frac})$ and device: total IPC and capacity per degree (\texttt{.tmp} files are skipped)
+    \item \textbf{paired comparison} for one $(S, \text{shape}, \text{frac})$, using only the $n$ devices that have
+    both runs (with $f$ and with the constant $p^*_S$):
+    \begin{enumerate}
+        \item[i)] mean IPC over the devices: $C[f]$ and $C[p^*_S]$
+        \item[ii)] gain per device $C_k[f] - C_k[p^*_S]$, then the mean
+        $\Delta C = \frac{1}{n} \sum_{k=1}^{n} \big(C_k[f] - C_k[p^*_S]\big)$
+        \item[iii)] error: standard error over the devices, $\operatorname{std}_k / \sqrt{n}$
+    \end{enumerate}
+    both runs of a device use the same inputs $\to$ much of the noise cancels in the difference, $\Delta C$ is more
+    precise than $C$ itself
+    \item \textbf{best frac:} for every $(S, \text{shape})$ the frac with the largest $\Delta C$. It is chosen on
+    the same data it is reported on $\to$ slightly optimistic; the curve $\Delta C(\text{frac})$ shows whether the
+    gain is systematic
+    \item \textbf{table} with one row per $(S, \text{shape}, \text{frac})$:
+    \begin{center}
+    \begin{tabular}{p{0.15\linewidth}p{0.7\linewidth}}
+        \hline
+        column & meaning \\
+        \hline
+        $n$ & number of devices with both runs (10 for a finished run) \\
+        $C[f]$ & mean total IPC with the response $f$ \\
+        $C[p^*]$ & mean total IPC with the constant $p^*_S$ (same devices) \\
+        $\Delta C$ & mean paired gain $C[f] - C[p^*_S]$ \\
+        sem & $\operatorname{std} / \sqrt{n}$ of the paired gain \\
+        \hline
+    \end{tabular}
+    \end{center}
+    the best frac per $(S, \text{shape})$ is marked with \texttt{<- best}
+    \item \textbf{figures} in \texttt{rq2/figures/<job file>/}:
+    \begin{itemize}
+        \item \texttt{ipc\_vs\_S.png}: IPC vs $S$ for the constant $p^*_S$ and every shape at its best frac
+        \item \texttt{gain\_vs\_frac\_<shape>.png}: $\Delta C$ vs frac, one file per shape (e.g.\
+        \texttt{gain\_vs\_frac\_linear.png}), one line per $S$; the same $y$-range for all shapes, so they can be
+        compared directly; frac $= 0$ is the baseline, $\Delta C = 0$
+        \item \texttt{degree\_split.png}: capacity of degree 1, 2, 3 per $S$ for the constant (plain) and every shape
+        at its best frac (one hatch per shape) $\to$ does the gain come from memory or nonlinearity?
+        \item \texttt{gain\_vs\_S.png}: $\Delta C$ vs $S$ at a fixed frac (\texttt{--frac}, default 1), one line
+        per shape; no selection of the best frac $\to$ no selection bias; $S = \infty$ is given in the legend
+        (not on the log axis)
+    \end{itemize}
+\end{enumerate}

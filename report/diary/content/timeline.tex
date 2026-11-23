@@ -73,3 +73,24 @@ Meeting with tobi - discussed the paper, delete unesccessary functionalities fro
     and the computation of the capacities $C_l = (R^T A^{-1} R)_{ll}$ $\to$ Section~\ref{sec:implementation},
     \hyperref[sec:ipc-implementation]{entry of 19.11}
 \end{itemize}
+
+\subsection*{20.11 \quad Meeting with Tobi, plan and implementation for RQ2}
+\begin{itemize}
+    \item meeting with Tobi:
+    \begin{itemize}
+        \item discussed the results of RQ1 (map of the total IPC over $(\lambda, p)$ for several $S$)
+        \item relation of the optimal $\lambda^*, p^*$ to the number of shots $S$
+        \item start of RQ2: a sequence-dependent reset strength $p_t = f(u_t)$ should be analysed
+    \end{itemize}
+    \item drafted the plan for RQ2 (\texttt{rq2/PLAN.md}) $\to$ Section~\ref{sec:implementation},
+    \hyperref[sec:rq2-plan]{entry of 20.11}
+    \item implemented the input-dependent reset in \texttt{qrc} (\texttt{check\_strengths}, \texttt{reset\_sequence},
+    class \texttt{Reset}) $\to$ Section~\ref{sec:implementation}, \hyperref[sec:rq2-implementation]{entry of 20.11}
+\end{itemize}
+
+\subsection*{23.11 \quad Scan and comparison scripts for RQ2}
+\begin{itemize}
+    \item worked through \texttt{rq2/rq2\_scan.py} (job system of RQ2) and \texttt{rq2/rq2\_compare.py} (paired
+    comparison with the constant $p^*_S$) $\to$ Section~\ref{sec:implementation},
+    \hyperref[sec:rq2-scan-compare]{entry of 23.11}
+\end{itemize}
