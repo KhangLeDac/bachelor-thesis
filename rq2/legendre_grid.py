@@ -8,9 +8,9 @@ i.e. kind "legendre" with coefs = [cos(theta), sin(theta)]. theta in [0, 180) an
 whole valid region once: a negative frac is the direction theta + 180 deg, frac = +-1 is the boundary
 (p touches 0 or 1), frac = 0 the constant p*_S. theta = 0 is the linear, theta = 90 the quadratic shape.
 
-    uv run python rq2/rq2_legendre_grid.py                       # defaults below
-    uv run python rq2/rq2_legendre_grid.py --step 30 --S 1e5     # coarser test grid
-    uv run python rq2/rq2_scan.py --config rq2/configs/phaseA_legendre_grid.toml --dry-run
+    uv run python rq2/legendre_grid.py                       # defaults below
+    uv run python rq2/legendre_grid.py --step 30 --S 1e5     # coarser test grid
+    uv run python rq2/scan.py --config rq2/configs/phaseA_legendre_grid.toml --dry-run
 
 Prints the number of jobs and a runtime estimate (seconds per job measured on phaseA_linquad with 18 workers).
 """
@@ -24,7 +24,7 @@ from qrc.reset import Reset
 
 HERE = Path(__file__).resolve().parent
 
-# RQ1 optimum per S: argmax of the mean total IPC over 10 devices (rq1/results/rq1_map), as in phaseA.toml
+# RQ1 optimum per S: argmax of the mean total IPC over 10 devices (rq1/results/map), as in phaseA.toml
 BASELINES = {1e4: (1.0, 0.80), 1e5: (0.8, 0.70), 1e6: (0.4, 0.25)}
 
 
@@ -71,7 +71,7 @@ def main():
 
     lines = [
         "# RQ2 phase A: polar grid of Legendre responses in the (e_1, e_2) plane around the RQ1 optimum.",
-        f"# Written by rq2/rq2_legendre_grid.py (theta step {args.step:g} deg). f(u) = p* + frac a_max(theta) g_theta(u),",
+        f"# Written by rq2/legendre_grid.py (theta step {args.step:g} deg). f(u) = p* + frac a_max(theta) g_theta(u),",
         "# g_theta = cos(theta) e_1 + sin(theta) e_2; theta in [0, 180) with frac in [-1, 1] covers the whole valid region",
         "# (frac < 0 = direction theta + 180 deg). theta = 0: linear, theta = 90: quadratic.",
         f"seeds  = {list(range(args.seeds))}",
@@ -81,7 +81,7 @@ def main():
         f'out    = "results/{args.name}"',
         f"fracs  = [{', '.join(f'{f:g}' for f in fracs)}]   # frac = 0 (constant p*) always runs",
         "",
-        "# RQ1 optimum per S (rq1/results/rq1_map)",
+        "# RQ1 optimum per S (rq1/results/map)",
     ]
     for S in args.S:
         lam, p = BASELINES[S]

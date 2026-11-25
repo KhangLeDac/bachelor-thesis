@@ -7,4 +7,4 @@ shots = [1e2, 1e3, 1e4, 1e5, 1e6, inf]          # TOML understands inf
 M = 50000
 T_wash = 1000
 delays = [20, 10, 7]
-out = "results/rq1_map"                          # one file per job lands here
+out = "results/map"                          # one file per job lands here

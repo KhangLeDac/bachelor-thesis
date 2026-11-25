@@ -347,7 +347,7 @@ Pipeline:
     \xrightarrow{\texttt{ipc}} C \quad (\text{checked by } \texttt{sampling})
 \end{equation*}
 
-\subsection*{18.11 \quad Scripts \texttt{shot\_check}, \texttt{rq1\_map}, \texttt{rq1\_analyze} and the job system}
+\subsection*{18.11 \quad Scripts \texttt{shot\_check}, \texttt{rq1/map}, \texttt{rq1/analyze} and the job system}
 \phantomsection
 \label{sec:job-system}
 
@@ -363,23 +363,23 @@ Pipeline:
     several shot seeds per $S$ for error bars $\to$ \texttt{examples/figures/shot\_check.png/.npz} and a table \\
     \texttt{examples/configs/shot\_check.toml} & job file: shots $10 \ldots 10^6$, 3 shot seeds, $M = 50000$,
     $T_{wash} = 1000$, four \texttt{[[points]]} (best point, weak reset, weak measurement, projective) \\
-    \texttt{rq1/rq1\_map.py} & RQ1 baseline: total IPC, degree 1--3 and linear memory function over a
+    \texttt{rq1/map.py} & RQ1 baseline: total IPC, degree 1--3 and linear memory function over a
     $(\lambda, p)$ grid for several devices (coupling seeds) and several $S$ \\
-    \texttt{rq1/configs/rq1\_map.toml} & $\lambda = 0.1 \ldots 1.0$ (10), $p = 0.05 \ldots 0.95$ (19), seeds $0 \ldots 9$,
+    \texttt{rq1/configs/map.toml} & $\lambda = 0.1 \ldots 1.0$ (10), $p = 0.05 \ldots 0.95$ (19), seeds $0 \ldots 9$,
     $S \in \{10^2, \ldots, 10^6, \infty\}$, $M = 50000$, delays $(20, 10, 7)$ for degree 1, 2, 3,
-    output \texttt{rq1/results/rq1\_map} \\
-    \texttt{rq1/rq1\_analyze.py} & reads the result files (also partial results), checks washout and
+    output \texttt{rq1/results/map} \\
+    \texttt{rq1/analyze.py} & reads the result files (also partial results), checks washout and
     memory cut-off, finds the optimum $(\lambda^*, p^*)$ per $S$ (mean over the complete devices) and saves
     three figures \\
     \hline
 \end{tabular}
 \end{center}
 
-\textbf{\texttt{rq1\_analyze.py}} produces
+\textbf{\texttt{rq1/analyze.py}} produces
 \begin{itemize}
-    \item \texttt{rq1\_map\_maps.png}: mean total IPC over the devices per $S$ (star: optimum), std over devices below
-    \item \texttt{rq1\_map\_optimum.png}: $\lambda^*, p^*$ vs.\ $S$ with a bootstrap over devices, IPC at the optimum
-    \item \texttt{rq1\_map\_ridge.png}: memory function and degree split at the optimum of every finite $S$
+    \item \texttt{maps.png}: mean total IPC over the devices per $S$ (star: optimum), std over devices below
+    \item \texttt{optimum.png}: $\lambda^*, p^*$ vs.\ $S$ with a bootstrap over devices, IPC at the optimum
+    \item \texttt{ridge.png}: memory function and degree split at the optimum of every finite $S$
     \item checks: max washout trace distance, jobs with warnings, grid points where the memory at the
     largest delay is $> 0.01$ (total IPC underestimated there because the delays are cut off)
 \end{itemize}
@@ -390,7 +390,7 @@ Pipeline:
     reproducible from \texttt{configs/}; unknown or missing keys raise an error
     \item \texttt{shot\_check}: priority command line $>$ job file $>$ defaults; every \texttt{[[points]]}
     entry is one job
-    \item \texttt{rq1\_map}: one job $=$ one $(\lambda, p, \text{seed})$ $\to$ simulate once, evaluate at all $S$
+    \item \texttt{rq1/map}: one job $=$ one $(\lambda, p, \text{seed})$ $\to$ simulate once, evaluate at all $S$
     (the cost hardly depends on $S$), here $10 \cdot 19 \cdot 10 = 1900$ jobs
     \item parallelisation: \texttt{ProcessPoolExecutor} over jobs, one BLAS thread per process
     (\texttt{OMP\_NUM\_THREADS=1}, small matrices), default workers $=$ cores $- 2$
@@ -402,7 +402,7 @@ Pipeline:
     \item order: seeds outermost $\to$ complete maps of device 0, 1, \ldots\ are finished first, so partial
     results can already be analysed
     \item \texttt{--dry-run} only counts the jobs; long runs in the background with
-    \texttt{nohup \ldots\ > logs/rq1\_map.log}, progress and ETA are printed to the log
+    \texttt{nohup \ldots\ > logs/map.log}, progress and ETA are printed to the log
     \item \texttt{results/} and \texttt{logs/} are in \texttt{.gitignore} (large, reproducible from the configs)
 \end{itemize}
 
@@ -671,13 +671,13 @@ b) Implementation of the class:
     a constant $p$), optimisation of the leaking rate; PDF: \url{https://www.ai.rug.nl/minds/uploads/leakyESN.pdf}
 \end{itemize}
 
-\subsection*{23.11 \quad RQ2: \texttt{rq2\_scan.py} and \texttt{rq2\_compare.py}}
+\subsection*{23.11 \quad RQ2: \texttt{rq2/scan.py} and \texttt{rq2/compare.py}}
 \phantomsection
 \label{sec:rq2-scan-compare}
 
-\subsubsection*{1. \texttt{rq2/rq2\_scan.py}: running the jobs}
+\subsubsection*{1. \texttt{rq2/scan.py}: running the jobs}
 Computes the IPC for the constant baseline $p^*_S$ and for input-dependent resets $p_t = f(u_t)$ and saves every
-result to its own file; no analysis. Same job system as \texttt{rq1\_map.py} (\hyperref[sec:job-system]{entry of
+result to its own file; no analysis. Same job system as \texttt{rq1/map.py} (\hyperref[sec:job-system]{entry of
 18.11}): TOML job file, one file per job, restartable, parallel.
 
 \textbf{Job file} (e.g.\ \texttt{rq2/configs/phaseA.toml}):
@@ -723,9 +723,9 @@ not depend on the shape) plus one job per shape and non-zero frac:
 Difference to RQ1: there one simulation per $(\lambda, p, \text{device})$ served all $S$; here $\lambda^*_S$,
 $p^*_S$ and therefore $f$ depend on $S$ $\to$ every $S$ needs its own simulation.
 
-\subsubsection*{2. \texttt{rq2/rq2\_compare.py}: analysis}
+\subsubsection*{2. \texttt{rq2/compare.py}: analysis}
 Only reads the result files (no simulation, works also on partial results):
-\texttt{uv run python rq2/rq2\_compare.py --config rq2/configs/phaseA.toml [--frac 1]}
+\texttt{uv run python rq2/compare.py --config rq2/configs/phaseA.toml [--frac 1]}
 \begin{enumerate}
     \item \textbf{load results:} all \texttt{.npz} files of the results folder $\to$ for every
     $(S, \text{shape}, \text{frac})$ and device: total IPC and capacity per degree (\texttt{.tmp} files are skipped)

@@ -10,7 +10,7 @@ Summary:
 | `qrc/channel.py` | `check_strengths` accepts arrays | check a whole sequence $p_t$ at once |
 | `qrc/reservoir.py` | `p` may be a function; new `reset_sequence`; `Run.p_seq` | use $p_t = f(u_t)$ in the simulation |
 | `qrc/reset.py` (new) | class `Reset`: response functions $f(u) = p_0 + a\,g(u)$ | the families of phase A, centred and normalised |
-| `rq2/rq2_scan.py` (new) | job system for phase A | scan shapes and strengths around the RQ1 optimum |
+| `rq2/scan.py` (new) | job system for phase A | scan shapes and strengths around the RQ1 optimum |
 | `rq2/configs/phaseA.toml` (new) | first job file | linear and magnitude response, 6 values of $S$, 10 devices |
 | `tests/` | 4 + 1 + 23 new tests | constant $f$ reproduces RQ1 exactly, shapes are normalised, range checks |
 
@@ -73,7 +73,7 @@ $p_t$, so it still measures whether the initial state is forgotten.
 input sequence. Differences $C[f] - C[p^*]$ are therefore not blurred by different inputs.
 
 **`trace_distance_curve(params, lam, p, u)`:** the same change, so the memory time of RQ1
-(`rq1_memory.py`) can also be computed for an input-dependent reset.
+(`rq1/memory.py`) can also be computed for an input-dependent reset.
 
 **`Run`:** new field `p_seq` (shape $(T_{wash}+M,)$, aligned with `u`). `Run.p` holds what was passed
 (number or function).
@@ -130,9 +130,9 @@ f = Reset.from_fraction("magnitude", p0=0.8, frac=0.5)   # p = 0.8 + a sqrt(12)(
 run = simulate(params, lam=1.0, p=f, M=50000)            # run.p_seq[t] = f(run.u[t])
 ```
 
-## 5. `rq2/rq2_scan.py` and `rq2/configs/phaseA.toml` (new): phase A scan
+## 5. `rq2/scan.py` and `rq2/configs/phaseA.toml` (new): phase A scan
 
-Same job system as `rq1/rq1_map.py` (TOML job file, one file per job, restartable, parallel, see diary
+Same job system as `rq1/map.py` (TOML job file, one file per job, restartable, parallel, see diary
 18.11). Differences:
 
 - **Baseline per $S$:** `[[baseline]]` entries give $(S, \lambda^*_S, p^*_S)$. Because $p^*_S$ and
@@ -152,15 +152,15 @@ and `magnitude`, frac $\in \{\pm0.25, \pm0.5, \pm0.75, \pm1\}$, 10 devices, $M =
 $(20, 10, 7)$ (degrees 1–3, as in RQ1) → 1020 jobs (about the size of the RQ1 map).
 
 ```bash
-uv run python rq2/rq2_scan.py --config rq2/configs/phaseA.toml --dry-run
-nohup uv run python rq2/rq2_scan.py --config rq2/configs/phaseA.toml > rq2/logs/phaseA.log 2>&1 &
+uv run python rq2/scan.py --config rq2/configs/phaseA.toml --dry-run
+nohup uv run python rq2/scan.py --config rq2/configs/phaseA.toml > rq2/logs/phaseA.log 2>&1 &
 ```
 
 **Caveat:** for $S = 10^2, 10^3$ the RQ1 optimum lies at the edge of the RQ1 grid ($\lambda = 1$,
 $p = 0.95$). There $a_{\max}$ is small (the reset cannot go much above 0.95), so phase A can only test
 weak responses at small $S$.
 
-Not implemented yet: `rq2_analyze.py` ($\Delta C$ vs. frac per shape and $S$, degree split and memory
+Not implemented yet: `rq2/analyze.py` ($\Delta C$ vs. frac per shape and $S$, degree split and memory
 function of the best $f$); it is easier to design once the first results exist.
 
 ## 6. Tests
@@ -174,5 +174,5 @@ function of the best $f$); it is easier to design once the first results exist.
 | `test_channel.py::test_check_strengths_arrays` | array check, including NaN |
 | `test_reset.py` (23 tests) | every shape has mean 0 and std 1; $\langle p\rangle = p_0$ and $\operatorname{std}(p) = a$; frac $= \pm1$ touches 0 or 1 but stays inside; known closed forms; invalid input rejected; `Reset` is picklable |
 
-All 69 tests pass. A small end-to-end run of `rq2_scan.py` (1 device, $M = 3000$, $S = 10^4$) produced
+All 69 tests pass. A small end-to-end run of `rq2/scan.py` (1 device, $M = 3000$, $S = 10^4$) produced
 the expected files with $\langle p_t\rangle = p^*_S$ and $\operatorname{std}(p_t) = a$.

@@ -1,7 +1,7 @@
-"""Heat maps of Delta C over the (e_1, e_2) plane for a Legendre grid (job file from rq2_legendre_grid.py).
+"""Heat maps of Delta C over the (e_1, e_2) plane for a Legendre grid (job file from rq2/legendre_grid.py).
 
 For every S one figure with two panels, both showing Delta C = mean over devices of C[f] - C[p*_S]
-(paired, as in rq2_compare.py) at every grid point, interpolated between the points:
+(paired, as in rq2/compare.py) at every grid point, interpolated between the points:
 
     left   absolute coefficients (a_1, a_2) = a (cos theta, sin theta), a = frac * a_max(theta, sign):
            the real response p = p* + a_1 e_1 + a_2 e_2; the outer points are the boundary of the valid region
@@ -10,7 +10,7 @@ For every S one figure with two panels, both showing Delta C = mean over devices
 The constant p*_S is the origin (Delta C = 0). Black dots = grid points, star = best point.
 Works with partial results (only points with both runs on some device are used).
 
-    uv run python rq2/rq2_legendre_map.py --config rq2/configs/phaseA_legendre_grid.toml
+    uv run python rq2/legendre_map.py --config rq2/configs/phaseA_legendre_grid.toml
 
 Saves rq2/figures/<job file name>/heatmap_S<S>.png. --shared uses the same colour scale for every S.
 """
@@ -28,7 +28,7 @@ import numpy as np
 from matplotlib.colors import CenteredNorm
 
 from qrc.reset import Reset
-from rq2_compare import load, paired
+from compare import load, paired
 
 HERE = Path(__file__).resolve().parent
 
@@ -64,7 +64,7 @@ def panel(ax, x, y, z, norm, cmap, best, xlabel, ylabel, title):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--config", type=Path, required=True, help="job file written by rq2_legendre_grid.py")
+    ap.add_argument("--config", type=Path, required=True, help="job file written by rq2/legendre_grid.py")
     ap.add_argument("--shared", action="store_true", help="same colour scale for every S")
     ap.add_argument("--cmap", default="RdBu_r", help="diverging colour map, centred at Delta C = 0")
     args = ap.parse_args()

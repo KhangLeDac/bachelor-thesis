@@ -9,10 +9,10 @@ so a long run can be interrupted and restarted: jobs whose file exists are skipp
 the rq1/ folder, independent of the directory the script is started from. The job file is copied to
 <out>/config.toml; a restart with different settings into the same ``out`` is refused.
 
-    uv run python rq1/rq1_map.py --config rq1/configs/rq1_map.toml --dry-run   # count jobs only
-    nohup uv run python rq1/rq1_map.py --config rq1/configs/rq1_map.toml > rq1/logs/rq1_map.log 2>&1 &
+    uv run python rq1/map.py --config rq1/configs/map.toml --dry-run   # count jobs only
+    nohup uv run python rq1/map.py --config rq1/configs/map.toml > rq1/logs/map.log 2>&1 &
 
-Analyse with rq1/rq1_analyze.py.
+Analyse with rq1/analyze.py.
 """
 
 import os
@@ -103,7 +103,7 @@ def main():
 
     # parse command line arguments
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--config", type=Path, required=True, help="TOML job file, e.g. rq1/configs/rq1_map.toml")
+    ap.add_argument("--config", type=Path, required=True, help="TOML job file, e.g. rq1/configs/map.toml")
     ap.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2), help="parallel processes")
     ap.add_argument("--dry-run", action="store_true", help="only count jobs, run nothing")
     args = ap.parse_args()

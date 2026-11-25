@@ -18,7 +18,7 @@ Plan in three phases:
 ## 0. Baseline and conventions
 
 - **Baseline:** for every $S$ the RQ1 optimum $(\lambda^*_S, p^*_S)$ (mean over devices, from
-  `rq1_analyze.py`). Every result of RQ2 is reported as the gain over that baseline,
+  `rq1/analyze.py`). Every result of RQ2 is reported as the gain over that baseline,
   $$\Delta C = C[f] - C[p^*_S],$$
   computed on the **same device and the same input sequence** (paired comparison). Both runs share the
   same randomness, so the noise of $\Delta C$ is much smaller than the noise of $C$ itself.
@@ -45,9 +45,9 @@ Plan in three phases:
 | `qrc/channel.py` | `check_strengths` accepts arrays | done |
 | `qrc/reservoir.py` | `simulate` / `trace_distance_curve` take a constant `p` or a function $f$; `Run.p_seq` | done |
 | `qrc/reset.py` | `Reset`: $f(u) = p_0 + a\,g(u)$ with $\langle g\rangle = 0$, $\langle g^2\rangle = 1$, so $a$ = std of $p_t$ (the TOML cannot hold Python code, and lambdas cannot be sent to worker processes) | done |
-| `rq2/rq2_scan.py` | job system as in `rq1_map.py`: one job = one (baseline $S$, shape, frac, device), saved to its own `.npz` | done |
+| `rq2/scan.py` | job system as in `rq1/map.py`: one job = one (baseline $S$, shape, frac, device), saved to its own `.npz` | done |
 | `rq2/configs/phaseA.toml` | first job file: linear and magnitude, RQ1 optima as baseline | done |
-| `rq2/rq2_analyze.py` | $\Delta C$ vs parameters, degree split and memory function of the best $f$ | after first results |
+| `rq2/analyze.py` | $\Delta C$ vs parameters, degree split and memory function of the best $f$ | after first results |
 
 ## 2. Phase A: fixed response functions
 
@@ -89,7 +89,7 @@ small $S$"*. Questions to answer from phase A:
 2. Direction: more reset for large $\lvert u\rvert$ or for small?
 3. How does the optimal response depend on $S$, i.e. on the noise level?
 4. Is it the same for every device? If not, which device property predicts it (memory time from
-   `rq1_memory`, degree split at the baseline)?
+   `rq1/memory`, degree split at the baseline)?
 
 Possible mechanisms to test against the data:
 - the reset multiplies the stored state by $(1-p_t)$, so an input-dependent $p_t$ multiplies past memory

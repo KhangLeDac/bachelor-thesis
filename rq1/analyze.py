@@ -1,6 +1,6 @@
-"""Analyse the results of rq1/rq1_map.py. Works on partial results (missing jobs are ignored).
+"""Analyse the results of rq1/map.py. Works on partial results (missing jobs are ignored).
 
-    uv run python rq1/rq1_analyze.py --config rq1/configs/rq1_map.toml
+    uv run python rq1/analyze.py --config rq1/configs/map.toml
 
 Prints checks (washout, memory cut-off) and the optimum per S, and saves to rq1/figures/:
     maps.png      mean total IPC over the devices per S (star: optimum), std over devices below

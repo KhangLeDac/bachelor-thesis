@@ -10,10 +10,10 @@ capacities at that S, save to its own file
     <out>/S1e+04_magnitude_frac+0.50_seed3.npz
 
 All jobs use the same input sequence (input_seed 0), so C[f] - C[p*_S] is a paired difference.
-Restartable as rq1_map.py: existing files are skipped, the job file is copied to <out>/config.toml.
+Restartable as rq1/map.py: existing files are skipped, the job file is copied to <out>/config.toml.
 
-    uv run python rq2/rq2_scan.py --config rq2/configs/phaseA.toml --dry-run
-    nohup uv run python rq2/rq2_scan.py --config rq2/configs/phaseA.toml > rq2/logs/phaseA.log 2>&1 &
+    uv run python rq2/scan.py --config rq2/configs/phaseA.toml --dry-run
+    nohup uv run python rq2/scan.py --config rq2/configs/phaseA.toml > rq2/logs/phaseA.log 2>&1 &
 """
 
 import os

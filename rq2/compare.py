@@ -1,6 +1,6 @@
 """Compare the IPC of the optimal constant reset p*_S with input-dependent resets p_t = f(u_t).
 
-Reads the result files of rq2_scan.py for a job file (also partial results) and, for every S and every
+Reads the result files of rq2/scan.py for a job file (also partial results) and, for every S and every
 shape in the results, compares C[f] with the constant baseline C[p*_S] (frac = 0). The difference is
 paired: both runs use the same device and the same input sequence, so
 
@@ -13,7 +13,7 @@ distribution of Delta C.
 
 Only devices for which the constant run and the run of f both exist are used.
 
-    uv run python rq2/rq2_compare.py --config rq2/configs/phaseA_linquad.toml
+    uv run python rq2/compare.py --config rq2/configs/phaseA_linquad.toml
 
 Prints a table and saves three figures to rq2/figures/<job file name>/:
     ipc_vs_S.png       IPC vs S: constant p*_S and the best frac of every shape (error bars: sem over devices)
@@ -103,7 +103,7 @@ def paired(res: dict, S: float, name: str, frac: float):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--config", type=Path, required=True, help="the job file used for rq2_scan.py")
+    ap.add_argument("--config", type=Path, required=True, help="the job file used for rq2/scan.py")
     ap.add_argument("--frac", type=float, default=1.0,
                     help="response strength a / a_max for gain_vs_S_frac<frac>.png (default 1: full allowed range)")
     args = ap.parse_args()
