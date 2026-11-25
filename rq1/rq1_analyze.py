@@ -190,8 +190,11 @@ def main():
     rng = np.random.default_rng(0)
     boot = np.empty((args.boot, len(fin), 2))
     for b in range(args.boot):
+        # rng.integers(0, n_dev, n_dev) gives a bootstrap resample of the devices (with replacement)
+        # the mean over the resample 
         Tb = np.nanmean(T[:, :, rng.integers(0, n_dev, n_dev)], axis=2)
         for c, s in enumerate(fin):
+            # find the optimum (lam*, p*) for each S
             i, j = np.unravel_index(np.nanargmax(Tb[:, :, s]), Tb[:, :, s].shape)
             boot[b, c] = lams[i], ps[j]
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.8))
