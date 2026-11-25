@@ -770,3 +770,69 @@ Only reads the result files (no simulation, works also on partial results):
         (not on the log axis)
     \end{itemize}
 \end{enumerate}
+
+\subsection*{25.11 \quad RQ2: first results of phase A and a Legendre basis for $g$}
+\phantomsection
+\label{sec:rq2-phaseA-results}
+
+\textbf{Job files} (reorganised):
+\begin{itemize}
+    \item \texttt{phaseA.toml}: linear, magnitude, $P_3$
+    \item \texttt{phaseA\_linquad.toml} (formerly \texttt{linear.toml}): linear and quadratic, now with $S = \infty$
+    \item \texttt{phaseA\_legendre.toml}: mixtures of $P_1$ and $P_2$ (see part 2)
+\end{itemize}
+All with 10 devices, the RQ1 optimum $(\lambda^*_S, p^*_S)$ as baseline and
+$\text{frac} \in \{\pm 0.25, \pm 0.5, \pm 0.75, \pm 1\}$.
+
+\subsubsection*{1. Results of the first runs}
+
+\textbf{a) Linear response} $g(u) = \sqrt{3}\, u$:
+\begin{itemize}
+    \item gain $\Delta C > 0$ for every finite $S$; only at $S = \infty$ a small loss
+    ($\Delta C = -0.07 \pm 0.01$ at frac $= -1$)
+    \item the gain is significant (many standard errors) for $S = 10^4$ to $10^6$; largest at $S = 10^5$:
+    $\Delta C = 1.54 \pm 0.12$ at frac $= -1$
+    \item the gain is symmetric in frac ($\Delta C(\text{frac}) \approx \Delta C(-\text{frac})$) and grows with
+    $\abs{\text{frac}}$ $\to$ the best frac is at the edge $\pm 1$ of the allowed range
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.48\linewidth]{../../rq2/figures/phaseA_linquad/gain_vs_frac_linear.png}
+    \includegraphics[width=0.48\linewidth]{../../rq2/figures/phaseA_linquad/gain_vs_S_frac-1.00.png}
+    \caption{Left: paired gain $\Delta C$ vs frac for the linear response, one line per $S$. Right: $\Delta C$ vs $S$
+    at frac $= -1$ for the linear and quadratic response ($S = \infty$ in the legend).}
+\end{figure}
+
+\textbf{b) Other shapes} (quadratic, magnitude $\abs{u}$, $P_3$):
+\begin{itemize}
+    \item generally lower gain than linear (at the best frac)
+    \item quadratic (order 2) is better than linear for small $\abs{\text{frac}}$, e.g.\ $S = 10^5$, frac $= -0.25$:
+    $\Delta C = 0.95$ (quadratic) vs $0.44$ (linear), and for $S \leq 10^3$
+    \item $P_3$ (order 3) generally performs worse than linear (order 1)
+    \item the gain does not grow linearly with frac: for quadratic, magnitude and $P_3$ it saturates or has a maximum
+    at an intermediate frac (e.g.\ quadratic at $S = 10^5$: maximum at frac $= -0.5$)
+    \item at $S = \infty$ all shapes lose ($\Delta C$ down to $\approx -1$ for quadratic, magnitude and $P_3$ at
+    $\abs{\text{frac}} = 1$)
+\end{itemize}
+
+\subsubsection*{2. Plan: Legendre basis for $g$}
+\phantomsection
+\label{sec:rq2-legendre-plan}
+Test response shapes from the basis of the first two normalised Legendre polynomials
+$e_i(u) = \sqrt{2i + 1}\, P_i(u)$ ($\langle e_i e_j \rangle = \delta_{ij}$ for $u \sim U(-1, 1)$):
+\begin{equation*}
+    g(u) = c_1\, e_1(u) + c_2\, e_2(u), \qquad f(u) = p^*_S + a\, g(u)
+\end{equation*}
+\begin{itemize}
+    \item $\langle g^2 \rangle = c_1^2 + c_2^2$, and $g$ is normalised anyway $\to$ only the direction of
+    $(c_1, c_2)$ matters $\to$ unit circle:
+    \begin{equation*}
+        (c_1, c_2) = (\cos\theta, \sin\theta), \qquad \theta \in [0, \pi)
+    \end{equation*}
+    \item the other half circle $\theta \in [\pi, 2\pi)$ is $-g$, i.e.\ covered by the sign of
+    $a = \text{frac} \cdot a_{\max}$ with $\text{frac} \in [-1, 1]$
+    \item $\theta = 0$: linear, $\theta = \pi/2$: quadratic, $\theta = \pi/4$: equal mixture (first run,
+    \texttt{phaseA\_legendre.toml} with $c = (1/\sqrt{2}, 1/\sqrt{2})$)
+    \item result: heatmap of $\Delta C$ over the grid $(\theta, \text{frac})$ for every $S$
+\end{itemize}
