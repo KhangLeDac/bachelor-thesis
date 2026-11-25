@@ -8,15 +8,15 @@ paired: both runs use the same device and the same input sequence, so
 
 Only devices for which the constant run and the run of f both exist are used.
 
-    uv run python rq2/rq2_compare.py --config rq2/configs/linear.toml
+    uv run python rq2/rq2_compare.py --config rq2/configs/phaseA_linquad.toml
 
 Prints a table and saves three figures to rq2/figures/<job file name>/:
     ipc_vs_S.png       IPC vs S: constant p*_S and the best frac of every shape (error bars: sem over devices)
     gain_vs_frac_<shape>.png   Delta C vs frac, one file per shape; colour = S, same y-range for all shapes
     degree_split.png   degree split (1, 2, 3) of the constant (plain) and of every shape at its best frac
                        (one hatch per shape)
-    gain_vs_S.png      Delta C vs S at a fixed frac (--frac, default 1), one line per shape; S = inf cannot
-                       be placed on the log axis, its value is given in the legend
+    gain_vs_S_frac<frac>.png   Delta C vs S at a fixed frac (--frac, default 1; e.g. gain_vs_S_frac+1.00.png),
+                       one line per shape; S = inf cannot be placed on the log axis, its value is given in the legend
 Note: the "best frac" is picked on the same data it is reported on, which favours it slightly; the
 Delta C vs frac curve shows whether the gain is systematic or a single lucky point.
 """
@@ -64,7 +64,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", type=Path, required=True, help="the job file used for rq2_scan.py")
     ap.add_argument("--frac", type=float, default=1.0,
-                    help="response strength a / a_max for gain_vs_S.png (default 1: full allowed range)")
+                    help="response strength a / a_max for gain_vs_S_frac<frac>.png (default 1: full allowed range)")
     args = ap.parse_args()
     with open(args.config, "rb") as f:
         cfg = tomllib.load(f)
@@ -179,7 +179,7 @@ def main():
 
     # 4. Delta C vs S at a fixed frac (no selection of the best frac -> no selection bias)
     if args.frac not in fracs:
-        print(f"--frac {args.frac} not in the results (available: {fracs}); gain_vs_S.png not saved")
+        print(f"--frac {args.frac} not in the results (available: {fracs}); gain_vs_S not saved")
         return
     fig, ax = plt.subplots(figsize=(5.5, 4.2))
     for name in names:
@@ -194,7 +194,7 @@ def main():
     ax.set(xscale="log", xlabel="shots per step S", ylabel="Delta C = C[f] - C[p*_S]",
            title=f"gain vs S at frac = {args.frac:+g}")
     ax.legend(fontsize=8)
-    save(fig, "gain_vs_S.png")
+    save(fig, f"gain_vs_S_frac{args.frac:+.2f}.png")
 
 if __name__ == "__main__":
     main()

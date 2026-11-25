@@ -1,4 +1,5 @@
-# RQ2 phase A: linear and magnitude response around the RQ1 optimum, 10 devices
+# RQ2 phase A: linear, magnitude and P3 response around the RQ1 optimum, 10 devices
+# (quadratic: see phaseA_linquad.toml)
 seeds  = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]          # devices (same as RQ1)
 M      = 50000
 T_wash = 1000
@@ -45,4 +46,6 @@ kind = "linear"           # p = p* + a sqrt(3) u
 kind = "magnitude"        # p = p* + a sqrt(12) (|u| - 1/2)
 
 [[shapes]]
-kind = "quadratic"        # p = p* + a (3 sqrt(5)/2) (u^2 - 1/3)
+kind = "legendre"         # p = p* + a sqrt(7) P_3(u),  P_3 = (5u^3 - 3u)/2
+name = "P3"
+coefs = [0.0, 0.0, 1.0]
