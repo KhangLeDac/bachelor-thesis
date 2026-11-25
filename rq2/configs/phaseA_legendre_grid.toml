@@ -1,0 +1,86 @@
+# RQ2 phase A: polar grid of Legendre responses in the (e_1, e_2) plane around the RQ1 optimum.
+# Written by rq2/rq2_legendre_grid.py (theta step 15 deg). f(u) = p* + frac a_max(theta) g_theta(u),
+# g_theta = cos(theta) e_1 + sin(theta) e_2; theta in [0, 180) with frac in [-1, 1] covers the whole valid region
+# (frac < 0 = direction theta + 180 deg). theta = 0: linear, theta = 90: quadratic.
+seeds  = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+M      = 50000
+T_wash = 1000
+delays = [20, 10, 7]
+out    = "results/phaseA_legendre_grid"
+fracs  = [-1, -0.75, -0.5, -0.25, -0.1, -0.05, 0.05, 0.1, 0.25, 0.5, 0.75, 1]   # frac = 0 (constant p*) always runs
+
+# RQ1 optimum per S (rq1/results/rq1_map)
+[[baseline]]
+S = 1e+04
+lam = 1.0
+p = 0.8
+
+[[baseline]]
+S = 1e+05
+lam = 0.8
+p = 0.7
+
+[[baseline]]
+S = 1e+06
+lam = 0.4
+p = 0.25
+
+[[shapes]]
+kind = "legendre"
+name = "t000"
+coefs = [1.0, 0.0]   # theta = 0 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t015"
+coefs = [0.965925826289, 0.258819045103]   # theta = 15 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t030"
+coefs = [0.866025403784, 0.5]   # theta = 30 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t045"
+coefs = [0.707106781187, 0.707106781187]   # theta = 45 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t060"
+coefs = [0.5, 0.866025403784]   # theta = 60 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t075"
+coefs = [0.258819045103, 0.965925826289]   # theta = 75 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t090"
+coefs = [0.0, 1.0]   # theta = 90 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t105"
+coefs = [-0.258819045103, 0.965925826289]   # theta = 105 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t120"
+coefs = [-0.5, 0.866025403784]   # theta = 120 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t135"
+coefs = [-0.707106781187, 0.707106781187]   # theta = 135 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t150"
+coefs = [-0.866025403784, 0.5]   # theta = 150 deg
+
+[[shapes]]
+kind = "legendre"
+name = "t165"
+coefs = [-0.965925826289, 0.258819045103]   # theta = 165 deg
