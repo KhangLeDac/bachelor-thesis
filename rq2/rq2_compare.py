@@ -6,6 +6,11 @@ paired: both runs use the same device and the same input sequence, so
 
     Delta C = mean over devices of (C[f] - C[p*_S]),    error = std / sqrt(n_devices).
 
+The table also gives, per row, how many devices improve (Delta C > 0, e.g. 10/10), the worst and the best
+device, and the two-sided sign test p_sign (10/10 -> 0.002, 9/10 -> 0.021, 8/10 -> 0.11): the probability
+of a split at least this uneven if f did not change the capacity. It assumes nothing about the
+distribution of Delta C.
+
 Only devices for which the constant run and the run of f both exist are used.
 
     uv run python rq2/rq2_compare.py --config rq2/configs/phaseA_linquad.toml
@@ -24,6 +29,7 @@ Delta C vs frac curve shows whether the gain is systematic or a single lucky poi
 import argparse
 import tomllib
 from collections import defaultdict
+from math import comb
 from pathlib import Path
 
 import matplotlib
@@ -46,17 +52,52 @@ def load(out: Path) -> dict:
     return res
 
 
+def sign_test(n_pos: int, n_neg: int) -> float:
+    """Two-sided sign test: P(a split at least as uneven as n_pos : n_neg) if up and down are equally likely.
+    Devices with Delta C = 0 exactly are left out. 10:0 -> 0.002, 9:1 -> 0.021, 8:2 -> 0.11."""
+    n, k = n_pos + n_neg, min(n_pos, n_neg)
+    if n == 0:
+        return np.nan
+    return min(1.0, 2 * sum(comb(n, i) for i in range(k + 1)) / 2 ** n)
+
+
 def paired(res: dict, S: float, name: str, frac: float):
-    """Mean and sem over devices of C[f], C[p*] and Delta C, using devices with both runs."""
+    """
+    Mean and sem over devices of C[f], C[p*] and Delta C, using devices with both runs.
+
+    Parameters
+    ----------
+    res : dict
+        The results dictionary.
+    S : float
+        The value of S.
+    name : str
+        The name of the shape.
+    frac : float
+        The fraction of the input.
+
+    Returns
+    -------
+    dict or None
+        A dictionary with the mean and standard error of the mean for C[f], C[p*] and Delta C, or None if no devices with both runs are available.
+        Also per device: n_pos (devices with Delta C > 0), dC_min / dC_max (worst / best device) and
+        p_sign (two-sided sign test: probability of at least this one-sided a split if f had no effect).
+    """
     base, run = res.get((S, "constant", 0.0), {}), res.get((S, name, frac), {})
     seeds = sorted(set(base) & set(run))
     if not seeds:
         return None
+    # get capacity of every device for both runs
     c_f = np.array([run[s][0] for s in seeds])
     c_0 = np.array([base[s][0] for s in seeds])
+    # standard error of the mean
     sem = lambda x: x.std(ddof=1) / np.sqrt(len(x)) if len(x) > 1 else np.nan
+    # per device: how many improve, worst and best device
+    d = c_f - c_0
+    n_pos, n_neg = int((d > 0).sum()), int((d < 0).sum())
     return dict(n=len(seeds), C=c_f.mean(), C_sem=sem(c_f), C0=c_0.mean(), C0_sem=sem(c_0),
-                dC=(c_f - c_0).mean(), dC_sem=sem(c_f - c_0),
+                dC=d.mean(), dC_sem=sem(d),
+                n_pos=n_pos, dC_min=d.min(), dC_max=d.max(), p_sign=sign_test(n_pos, n_neg),
                 deg=np.mean([run[s][1] for s in seeds], axis=0), deg0=np.mean([base[s][1] for s in seeds], axis=0))
 
 
@@ -76,9 +117,11 @@ def main():
     names = sorted({k[1] for k in res} - {"constant"})
     fracs = sorted({k[2] for k in res if k[1] != "constant"})
 
-    # ---- table and best frac per (S, shape)
+    # ---- table and best frac per (S, shape) -> prints result table
+    # collects the best frac for every (S, shape)
     best = {}
-    print(f"{'S':>8} {'shape':>10} {'frac':>6} {'n':>3} {'C[f]':>7} {'C[p*]':>7} {'Delta C':>8} {'sem':>6}")
+    print(f"{'S':>8} {'shape':>10} {'frac':>6} {'n':>3} {'C[f]':>7} {'C[p*]':>7} {'Delta C':>8} {'sem':>6} "
+          f"{'improved':>8} {'worst':>7} {'best':>7} {'p_sign':>7}")
     for S in shots:
         for name in names:
             rows = {fr: paired(res, S, name, fr) for fr in fracs}
@@ -90,7 +133,8 @@ def main():
             for k, r in rows.items():
                 mark = " <- best" if k == fr else ""
                 print(f"{S:>8.0e} {name:>10} {k:>+6.2f} {r['n']:>3} {r['C']:7.3f} {r['C0']:7.3f} "
-                      f"{r['dC']:>+8.3f} {r['dC_sem']:6.3f}{mark}")
+                      f"{r['dC']:>+8.3f} {r['dC_sem']:6.3f} {str(r['n_pos']) + '/' + str(r['n']):>8} "
+                      f"{r['dC_min']:>+7.3f} {r['dC_max']:>+7.3f} {r['p_sign']:7.3f}{mark}")
         print()
 
     # ---- figures: three separate files in rq2/figures/<job file name>/
@@ -106,31 +150,47 @@ def main():
         plt.close(fig)
         print(f"saved {figdir / filename}")
 
-    # 1. IPC vs S
+
+
+    """ 1. IPC vs S for the best frac """
+
     fig, ax = plt.subplots(figsize=(5.5, 4.2))
+    # i) collect constant runs
     const = [(S, np.array([c for c, _ in res[S, "constant", 0.0].values()])) for S in shots
              if res.get((S, "constant", 0.0))]
+    
     ax.errorbar([S for S, _ in const], [c.mean() for _, c in const],
                 yerr=[c.std(ddof=1) / np.sqrt(len(c)) if len(c) > 1 else 0.0 for _, c in const],
                 fmt="o-", capsize=3, color="k", label="constant p*_S (all devices)")
+    
+    # ii) collect best runs for each shape
     for name in names:
-        pts = [(S, best[S, name][1][best[S, name][0]]) for S in shots if (S, name) in best]
+        keys = [S for S in shots if (S, name) in best and np.isfinite(S)]   # S = inf is not on the log axis
+        pts = [(S, best[S, name][1][best[S, name][0]]) for S in keys]
+        fr = ", ".join(f"{best[S, name][0]:+g}" for S in keys)              # best frac per S, in order of S
         ax.errorbar([S for S, _ in pts], [r["C"] for _, r in pts], yerr=[r["C_sem"] for _, r in pts],
-                    fmt="s-", capsize=3, label=f"{name}, best frac")
+                    fmt="s-", capsize=3, label=f"{name}, best frac ({fr})")
     ax.set(xscale="log", xlabel="shots per step S", ylabel="total IPC (degrees 1-3)", title="IPC vs S")
     ax.legend(fontsize=8)
     save(fig, "ipc_vs_S.png")
 
-    # 2. Delta C vs frac: one figure per shape, colour = S, same y-range for all shapes
+
+
+    """ 2. Delta C vs frac: one figure per shape, colour = S, same y-range for all shapes """
+
+    # i) collect the curves: for every shape, for every S, the Delta C vs frac curve (with sem)
     curves = {}
     for name in names:
         for S in shots:
             if (S, name) in best:
                 pts = {0.0: (0.0, 0.0)} | {k: (r["dC"], r["dC_sem"]) for k, r in best[S, name][1].items()}
                 curves[name, S] = pts                          # frac = 0 is the baseline itself: Delta C = 0
+    # ii) y range
     lo = min(v - e for pts in curves.values() for v, e in pts.values())
     hi = max(v + e for pts in curves.values() for v, e in pts.values())
     pad = 0.05 * (hi - lo)
+
+    # iii) plot every shape in a separate figure
     for name in names:
         fig, ax = plt.subplots(figsize=(6, 4.3))
         for j, S in enumerate(shots):
@@ -146,9 +206,14 @@ def main():
         ax.legend(fontsize=8)
         save(fig, f"gain_vs_frac_{name}.png")
 
-    # 3. degree split: constant (plain) and every shape at its best frac (own hatch)
+
+
+    """ 3. degree split: constant (plain) and every shape at its best frac (own hatch) """
+
     fig, ax = plt.subplots(figsize=(7, 4.5))
+    # number of delays
     D = len(cfg["delays"])
+    # group the bars by shape and S
     groups = [None] + names
     width = 0.8 / len(groups)
     x = np.arange(len(shots))
@@ -177,12 +242,18 @@ def main():
     ax.set(xlabel="shots per step S", ylabel="capacity", title="degree split at the best frac")
     save(fig, "degree_split.png")
 
-    # 4. Delta C vs S at a fixed frac (no selection of the best frac -> no selection bias)
+
+
+
+    """ 4. Delta C vs S at a fixed frac (no selection of the best frac -> no selection bias) """
+
+    # i) choose the frac to plot
     if args.frac not in fracs:
         print(f"--frac {args.frac} not in the results (available: {fracs}); gain_vs_S not saved")
         return
     fig, ax = plt.subplots(figsize=(5.5, 4.2))
     for name in names:
+    # ii) get the Delta C vs S curve at the chosen frac from paired()
         rows = [(S, paired(res, S, name, args.frac)) for S in shots]
         rows = [(S, r) for S, r in rows if r is not None]
         fin = [(S, r) for S, r in rows if np.isfinite(S)]
@@ -195,6 +266,10 @@ def main():
            title=f"gain vs S at frac = {args.frac:+g}")
     ax.legend(fontsize=8)
     save(fig, f"gain_vs_S_frac{args.frac:+.2f}.png")
+
+
+    """ 5. Linear Memory function for the best frac of every shape """
+
 
 if __name__ == "__main__":
     main()
