@@ -10,7 +10,8 @@ The diary is LaTeX in `report/diary/` (`diary.tex` includes `content/timeline.te
 Workflow:
 1. Find what was done: `git log --since=<last diary date> --stat`, `git status`, `git diff`, changed
    `rq*/PLAN.md` / `PHASE_*.md`, new figures in `rq*/figures/`. Read the last entries of the three content
-   files to match their style. Don't read raw result `.npz` files or logs; if numbers are needed, use the
+   files to match their style. Check `report/ideas/INDEX.md` for ideas
+   revised since the last entry; they belong in `content/theory.tex` (link the idea file). Don't read raw result `.npz` files or logs; if numbers are needed, use the
    summaries the analysis scripts print or that the user gives you.
 2. `content/timeline.tex`: add `\subsection*{DD.MM \quad <short title>}` with an `itemize` of what was done,
    each item pointing to the detailed entry: `$\to$ Section~\ref{sec:implementation},

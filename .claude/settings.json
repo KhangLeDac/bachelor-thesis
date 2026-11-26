@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"Context is being summarised. Ideas from this discussion that are not yet in report/ideas/ may lose detail: run /idea first (manual /compact) or right after.\"}'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\": {\"hookEventName\": \"SessionStart\", \"additionalContext\": \"The conversation was just compacted. If the summary mentions physical or mathematical ideas (definitions, derivations, parametrisations, design decisions) that are not yet recorded in report/ideas/ (check INDEX.md), tell the user briefly and offer to record them with the /idea skill.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
+}

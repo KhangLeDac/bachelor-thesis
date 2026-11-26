@@ -14,3 +14,7 @@ Delegate complex or repetitive tasks to isolated subagents to keep the main cont
 - `docs-updater`: Updates `README.md`, `rq*/PLAN.md`, `PHASE_*.md` and docstrings after code changes.
 - `diary`: Writes the research diary entry in `report/diary/content/*.tex` (timeline + detailed entry).
 - `git-manager`: Atomic commits in the repo style (`RQ2: ...`, `Diary: ...`), branches, PRs via GitHub MCP.
+- `ideas-curator`: Maintains the ideas log `report/ideas/` (index, cross-links, stale code/diary references, duplicates, diary sync).
+
+## Ideas log
+Key physical/mathematical ideas live in `report/ideas/` (one Markdown file per idea, index in `INDEX.md`). Record them with the `/idea` skill in the main session (it needs the discussion); never through a subagent.
