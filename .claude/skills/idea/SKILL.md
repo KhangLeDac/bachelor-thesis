@@ -11,6 +11,9 @@ itself is the primary source. Conventions and template: `report/ideas/README.md`
    ask which to record (or record each in its own file). Do not record trivia, code mechanics or results
    that belong in the diary.
 2. **Check for an existing entry.** Read `report/ideas/INDEX.md`; grep `report/ideas/` for key terms.
+   If the hint names an existing idea (e.g. "legendre"), everything in the request — observations,
+   results, interpretations, follow-up questions about it — goes **into that entry** (a dated
+   subsection in *Formulation*, new items in *Open questions*), never into a new file.
    If an entry covers the idea, **update it** (bump `revised`, extend sections, keep earlier reasoning,
    move outdated parts to *Alternatives considered*). If the new idea replaces an old one, set the old
    status to `superseded-by: <new-slug>` instead of deleting it.
