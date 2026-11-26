@@ -104,3 +104,29 @@ Meeting with tobi - discussed the paper, delete unesccessary functionalities fro
     \item planned a scan over mixtures of the first two Legendre polynomials $\to$ Section~\ref{sec:implementation},
     \hyperref[sec:rq2-legendre-plan]{entry of 25.11}
 \end{itemize}
+
+\subsection*{26.11 \quad Claude Code tooling, ideas log, optimal reset shapes of the Legendre grid}
+\begin{sloppypar}
+\begin{itemize}
+    \item (25.11, evening) dropped the \texttt{rq1\_}/\texttt{rq2\_} prefixes from script, job file, result and log
+    names (\texttt{rq1/map.py}, \texttt{rq2/scan.py}, \texttt{rq2/compare.py}, \ldots; commit \texttt{51c0f2f})
+    \item Claude Code tooling: project \texttt{CLAUDE.md} and subagents in \texttt{.claude/agents/} (architect,
+    reviewer, refactor, docs-updater, diary, git-manager) $\to$ Section~\ref{sec:implementation},
+    \hyperref[sec:tooling]{entry of 26.11}
+    \item ideas log \texttt{report/ideas/} (one Markdown file per idea, \texttt{INDEX.md}), \texttt{/idea} skill,
+    \texttt{ideas-curator} agent and compaction hooks $\to$ Section~\ref{sec:implementation},
+    \hyperref[sec:tooling]{entry of 26.11}
+    \item docs synchronised with the code: \texttt{rq2/PLAN.md} \S\,1--2 and \texttt{rq2/PHASE\_A.md} (four job files,
+    \texttt{compare.py} / \texttt{legendre\_grid.py} / \texttt{legendre\_map.py} / \texttt{plot\_shapes.py}
+    instead of the never-written \texttt{analyze.py}) $\to$ Section~\ref{sec:implementation},
+    \hyperref[sec:tooling]{entry of 26.11}
+    \item notation of the reset response fixed everywhere: $p_t = p^*_S + a\, g(u_t) = p^*_S + \sum_n b_n e_n(u_t)$
+    with strength $a$, unit direction $c_n$, absolute coefficients $b_n = a\, c_n$ (no $a_n$) $\to$
+    Section~\ref{sec:implementation}, \hyperref[sec:tooling]{entry of 26.11}
+    \item evaluated the polar Legendre grid (\texttt{phaseA\_legendre\_grid.toml}): coverage and feasible set,
+    best shapes, mirror symmetry, $\Delta C$ (essentially) never negative, best shapes are ramps between the
+    extremes $\to$ Section~\ref{sec:implementation}, \hyperref[sec:rq2-optimal-shapes]{entry of 26.11}
+    \item new plotting options \texttt{rq2/plot\_shapes.py --best / --fixed}, axes of \texttt{rq2/legendre\_map.py}
+    now $(b_1, b_2)$ $\to$ Section~\ref{sec:implementation}, \hyperref[sec:rq2-optimal-shapes]{entry of 26.11}
+\end{itemize}
+\end{sloppypar}

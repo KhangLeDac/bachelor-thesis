@@ -647,11 +647,11 @@ b) Implementation of the class:
     \item I.~M.~Sobol', ``Global sensitivity indices for nonlinear mathematical models and their Monte Carlo
     estimates'', Math.\ Comput.\ Simul.\ \textbf{55}(1--3), 271--280 (2001)\\
     $\to$ decomposition of a function of random inputs into orthogonal zero-mean parts (Hoeffding / Sobol'
-    decomposition, functional ANOVA); justifies reading the coefficients $a_n$ as independent directions
+    decomposition, functional ANOVA); justifies reading the coefficients $b_n$ as independent directions
     (``response spectrum''). Original: Sobol', Matem.\ Mod.\ \textbf{2}(1), 112--118 (1990), English translation
     in Math.\ Model.\ Comput.\ Exp.\ \textbf{1}, 407--414 (1993) (exact translated title differs between sources)
-    \item together with Parseval for an orthonormal expansion $f = p_0 + \sum_n a_n \sqrt{2n+1} P_n$:
-    $\langle f \rangle = p_0$, $\operatorname{Var}(f) = \sum_n a_n^2$ $\to$ $p_0$ is the mean and $a$ the standard
+    \item together with Parseval for an orthonormal expansion $f = p_0 + \sum_n b_n \sqrt{2n+1} P_n$ with $b_n = a\, c_n$, $\sum_n c_n^2 = 1$:
+    $\langle f \rangle = p_0$, $\operatorname{Var}(f) = \sum_n b_n^2 = a^2$ $\to$ $p_0$ is the mean and $\abs{a}$ the standard
     deviation of $p_t$
 \end{itemize}
 
@@ -820,7 +820,7 @@ $\text{frac} \in \{\pm 0.25, \pm 0.5, \pm 0.75, \pm 1\}$.
 \phantomsection
 \label{sec:rq2-legendre-plan}
 Test response shapes from the basis of the first two normalised Legendre polynomials
-$e_i(u) = \sqrt{2i + 1}\, P_i(u)$ ($\langle e_i e_j \rangle = \delta_{ij}$ for $u \sim U(-1, 1)$):
+$e_n(u) = \sqrt{2n + 1}\, P_n(u)$ ($\langle e_n e_m \rangle = \delta_{nm}$ for $u \sim U(-1, 1)$):
 \begin{equation*}
     g(u) = c_1\, e_1(u) + c_2\, e_2(u), \qquad f(u) = p^*_S + a\, g(u)
 \end{equation*}
@@ -836,3 +836,237 @@ $e_i(u) = \sqrt{2i + 1}\, P_i(u)$ ($\langle e_i e_j \rangle = \delta_{ij}$ for $
     \texttt{phaseA\_legendre.toml} with $c = (1/\sqrt{2}, 1/\sqrt{2})$)
     \item result: heatmap of $\Delta C$ over the grid $(\theta, \text{frac})$ for every $S$
 \end{itemize}
+
+\subsection*{26.11 \quad Claude Code tooling, ideas log and notation}
+\phantomsection
+\label{sec:tooling}
+\begin{sloppypar}
+Infrastructure only, no physics changes.
+\begin{itemize}
+    \item (25.11, commit \texttt{51c0f2f}) prefixes \texttt{rq1\_}/\texttt{rq2\_} dropped from scripts, job files,
+    results and logs: \texttt{rq1/map.py}, \texttt{rq1/analyze.py}, \texttt{rq1/configs/map.toml},
+    \texttt{rq2/scan.py}, \texttt{rq2/compare.py}, \texttt{rq2/legendre\_grid.py}, \texttt{rq2/legendre\_map.py};
+    references in scripts, job files, \texttt{PLAN.md}, \texttt{PHASE\_A.md} and this diary updated
+    \item \textbf{project instructions and subagents} (commit \texttt{06a11fc}): \texttt{CLAUDE.md} (scope, code
+    layout, reproducible seeds, paired comparisons) and subagents in \texttt{.claude/agents/}:
+    \begin{itemize}
+        \item \texttt{architect}: plans code changes and experiment designs (new phases, job files, controls)
+        \item \texttt{reviewer}: bugs and physical/statistical correctness (CPTP maps, step order, IPC estimator)
+        \item \texttt{refactor}: clean-up without changing any computed number
+        \item \texttt{docs-updater}: \texttt{README.md}, \texttt{rq*/PLAN.md}, \texttt{PHASE\_*.md}, docstrings
+        \item \texttt{diary}: this diary; \texttt{git-manager}: atomic commits in the repo style
+    \end{itemize}
+    \item \textbf{ideas log} \texttt{report/ideas/} (commits \texttt{4abfc55}, \texttt{53fec21}):
+    \begin{itemize}
+        \item one Markdown file per physical/mathematical idea (status, date/revised, related ideas, code and diary
+        references), index in \texttt{INDEX.md}, conventions and template in \texttt{README.md}
+        \item first entries: \texttt{legendre-basis-g.md} (Legendre basis for $g$, see
+        \hyperref[sec:rq2-legendre-plan]{entry of 25.11} and \hyperref[sec:rq2-optimal-shapes]{below}),
+        \texttt{fair-comparison-mean-reset.md} (comparison at fixed mean $\langle p_t \rangle = p^*_S$, paired
+        $\Delta C$)
+        \item \texttt{/idea} skill (\texttt{.claude/skills/idea/SKILL.md}): records an idea from the main
+        conversation $\to$ must run in the main session, a subagent cannot see the discussion; now also: a
+        request about an existing idea goes into that entry (dated subsection), never into a new file
+        \item \texttt{ideas-curator} agent: maintains the log (index, cross-links, stale code/diary references,
+        duplicates)
+        \item hooks in \texttt{.claude/settings.json}: \texttt{PreCompact} reminds to run \texttt{/idea} before the
+        context is compacted; \texttt{SessionStart} after a compaction checks for unrecorded ideas
+    \end{itemize}
+    \item \textbf{docs synchronised with the code} (uncommitted): \texttt{rq2/PLAN.md} \S\,1--2 and
+    \texttt{rq2/PHASE\_A.md} now list the four job files (\texttt{phaseA}, \texttt{phaseA\_linquad},
+    \texttt{phaseA\_legendre}, \texttt{phaseA\_legendre\_grid}) and the actual scripts \texttt{compare.py},
+    \texttt{legendre\_grid.py}, \texttt{legendre\_map.py}, \texttt{plot\_shapes.py} instead of the never-written
+    \texttt{analyze.py}; stale link to \texttt{IMPLEMENTATION.md} and the \texttt{rq1/memory.py} reference removed
+    \item \textbf{notation} of the reset response, fixed in \texttt{README.md} (Conventions), the ideas
+    \texttt{README.md}, docstrings (\texttt{qrc/reset.py}, \texttt{rq2/legendre\_map.py}, \texttt{rq2/plot\_shapes.py}),
+    job-file comments, \texttt{PLAN.md}, \texttt{PHASE\_A.md} and this diary (entries 20.11 and 25.11):
+    \begin{equation*}
+        p_t = f(u_t) = p^*_S + a\, g(u_t) = p^*_S + \sum_{n \ge 1} b_n\, e_n(u_t), \qquad e_n = \sqrt{2n+1}\, P_n
+    \end{equation*}
+    \begin{itemize}
+        \item $a$: signed strength, $a = \text{frac} \cdot a_{\max}(\theta, \pm) = \pm \operatorname{std}(p_t)$
+        \item $c_n$: unit direction, $\sum_n c_n^2 = 1$, two modes $(c_1, c_2) = (\cos\theta, \sin\theta)$
+        (\texttt{coefs} in the job files)
+        \item $b_n = a\, c_n$: absolute coefficients of $p - p^*_S$, $\norm{b} = \abs{a} = \operatorname{std}(p_t)$
+        \item the symbol $a_n$ is not used (confusion with the strength $a$)
+    \end{itemize}
+\end{itemize}
+\end{sloppypar}
+
+\subsection*{26.11 \quad RQ2: optimal reset shapes in the $(e_1, e_2)$ plane}
+\phantomsection
+\label{sec:rq2-optimal-shapes}
+\begin{sloppypar}
+Evaluation of the polar Legendre grid planned on 25.11 (\hyperref[sec:rq2-legendre-plan]{entry of 25.11}).
+Source with all details: \texttt{report/ideas/legendre-basis-g.md} (revised 26.11).
+
+\textbf{Settings} (\texttt{rq2/configs/phaseA\_legendre\_grid.toml}, written by \texttt{rq2/legendre\_grid.py}):
+\begin{itemize}
+    \item $g_\theta = \cos\theta\, e_1 + \sin\theta\, e_2$, $\theta = 0°, 15°, \ldots, 165°$ (12 directions)
+    \item $\text{frac} \in \{\pm 0.05, \pm 0.1, \pm 0.25, \pm 0.5, \pm 0.75, \pm 1\}$ $\to$ 144 points per $S$
+    (+ constant $p^*_S$ at frac $= 0$)
+    \item $S \in \{10^4, 10^5, 10^6\}$ with the RQ1 optimum $(\lambda^*_S, p^*_S) = (1.0, 0.8), (0.8, 0.7), (0.4, 0.25)$
+    \item 10 devices (seeds 0--9), $M = 50000$, $T_\text{wash} = 1000$, delays $(20, 10, 7)$; paired
+    $\Delta C = C[f] - C[p^*_S]$ $\pm$ sem over devices
+\end{itemize}
+
+\subsubsection*{1. Coverage and feasible set}
+\begin{itemize}
+    \item \textbf{coverage:} $\theta \in [0, \pi) \times \text{frac} \in [-1, 1]$ covers every allowed response in
+    $\operatorname{span}\{e_1, e_2\}$ (up to resolution):
+    \begin{itemize}
+        \item the norm of $c$ is absorbed into $a$; $(\theta + \pi, a) \equiv (\theta, -a)$
+        \item $(c, -\text{frac}) \equiv (-c, +\text{frac})$ exactly, because $a_{\max}$ depends on the sign:
+        $a_{\max}(-c, +) = a_{\max}(c, -)$; checked numerically (identical $f$)
+        \item \texttt{from\_fraction} maps frac one-to-one onto $[0, \pm a_{\max}(\theta, \pm)]$
+        \item not covered: $e_{n \ge 3}$ and an $e_0$ shift (excluded by the fair comparison at mean $p^*_S$)
+        \item the map wraps with a flip: $\Delta C(\pi^-, \text{frac}) \to \Delta C(0, -\text{frac})$
+    \end{itemize}
+    \item \textbf{feasible set in absolute coefficients:} $p(u) = p^*_S + b_1 e_1(u) + b_2 e_2(u)$,
+    \begin{equation*}
+        \mathcal{F} = \{ b : 0 \le p^*_S + b \cdot e(u) \le 1 \ \ \forall u \in [-1, 1] \}
+    \end{equation*}
+    \begin{itemize}
+        \item intersection of half-planes $\to$ convex, but not a disc: the constraint is a sup-norm, the metric
+        ($\norm{b} = \operatorname{std}(p_t)$) an $L^2$ norm
+        \item the extremes of $g$ depend on the direction: $e_1 \in [-1.73, 1.73]$, $e_2 \in [-1.12, 2.24]$
+        \item $p^*_S \neq \tfrac{1}{2}$: room $1 - p^*$ above, $p^*$ below; e.g.\ $S = 10^4$, $p^* = 0.8$,
+        $\theta = 90°$: $a_{\max}(+) \approx 0.089$, $a_{\max}(-) \approx 0.179$
+        \item boundary = envelope of the lines from the parabola arc $e(u) = (\sqrt{3}u, \tfrac{\sqrt{5}}{2}(3u^2 - 1))$:
+        curved pieces plus edges and corners from $u = \pm 1, 0$
+    \end{itemize}
+    $\to$ $\text{frac} = \norm{b} / \norm{b}_{\max}(\theta, \pm)$ rescales each ray separately and maps $\mathcal{F}$
+    onto the unit disc: coverage is complete, but equal frac $\neq$ equal $\operatorname{std}(p_t)$ across
+    $\theta$, sign and $S$
+\end{itemize}
+
+\subsubsection*{2. Grid results}
+\begin{center}
+\begin{tabular}{llll}
+    \hline
+    $S$ & $p^*_S$ & best $(b_1, b_2)$ & $\Delta C$ \\
+    \hline
+    $10^4$ & 0.8 & $(\pm 0.194, -0.112)$, $\theta = \mp 30°$ & $+1.20 \pm 0.13$ \\
+    $10^5$ & 0.7 & $(\pm 0.265, -0.071)$, $\theta = \mp 15°$ & $+1.94 \pm 0.09$ \\
+    $10^6$ & 0.25 & $(-0.220, +0.059)$, $\theta = 165°$ & $+1.12 \pm 0.09$ \\
+    \hline
+\end{tabular}
+\end{center}
+\begin{itemize}
+    \item mostly $e_1$ (odd); the sign of $b_2$ follows $p^*_S$: the tilt points to the side where $\mathcal{F}$ is
+    larger
+    \item \textbf{optimum on the boundary:} all best points at $\abs{\text{frac}} = 1$ ($S = 10^6$: the 0.75 point
+    equal within errors) $\to$ the $[0, 1]$ constraint is active
+    \item headroom (Bhatia--Davis): $p_t \in [0, 1]$ with mean $p^*$ $\Rightarrow$
+    $\operatorname{Var}(p_t) \le p^*(1 - p^*)$, attained by $p_t \in \{0, 1\}$ $\to$
+    $\operatorname{std} \le 0.40 / 0.46 / 0.43$ vs $0.22 / 0.27 / 0.23$ reached $\to$ step-like shapes could
+    modulate about twice as strongly
+    \item \textbf{mirror symmetry} $\Delta C(b_1, b_2) \approx \Delta C(-b_1, b_2)$, i.e.\ $f(u) \to f(-u)$; best vs
+    mirror point: $1.20 / 1.17$ ($S = 10^4$), $1.94 / 1.93$ ($10^5$), $1.12 / 1.01$ ($10^6$)
+    \begin{itemize}
+        \item exact identity $\Delta C(b_1, b_2; \varepsilon) = \Delta C(-b_1, b_2; -\varepsilon)$: under
+        $u \to -u$ the input distribution is invariant and the IPC is invariant (Legendre targets only change
+        sign), $(b_1, b_2) \to (-b_1, b_2)$ and $(h_x + \varepsilon u) \to (h_x - \varepsilon u)$
+        \item at fixed $\varepsilon$ the symmetry is broken only by $h_x \neq 0$ (for $h_x = 0$ the global flip
+        $\prod_i Z_i$ maps $X_i \to -X_i$ and leaves $XX$, $Z$, measurement and reset invariant); the input
+        enters weakly ($\varepsilon = 0.1$ vs $h_x = 0.5$) $\to$ small asymmetry
+    \end{itemize}
+    \item \textbf{$\Delta C$ (essentially) never negative:} 125/136/122 of 144 points have $\Delta C > 2\,$sem; the
+    4--9 negative points per $S$ lie at $\abs{\text{frac}} \le 0.1$, within 1--2 sem of zero. Hypotheses
+    (not tested yet):
+    \begin{itemize}
+        \item reset as a second, stronger input channel: in $H(u)$ the encoding is weak ($\varepsilon u = \pm 0.1$
+        vs $h_x = 0.5$), while $\operatorname{std}(p_t) \sim 0.2$ writes $u_t$ directly into the state; would
+        also explain the $e_1$ dominance ($e_1$ keeps the sign of $u$, $e_2$ loses it) and the approximate mirror
+        symmetry
+        \item no first-order loss: if $\Delta C$ is (nearly) even in $b_1$ by the symmetry above, it starts as
+        $\kappa b_1^2$; positive curvature $\kappa$ $\to$ gain for either sign
+        \item shot noise / SNR: modulation increases the input-driven variance of $\langle Z_i \rangle$, strong
+        resets push towards $\ket{0}$ (less noise); fits the small loss at $S = \infty$ in the linquad run
+        ($-0.07 \pm 0.01$); the grid has no $S \le 10^3$ or $S = \infty$
+        \item gain from the modulation itself (independent of $u_t$) $\to$ to be tested with a shuffled control
+    \end{itemize}
+    \item biases ruled out except one: $\lambda^*_S$ (optimised for constant $p$) and the missing degrees $\ge 4$
+    work \emph{against} $f$; estimator bias is shared by the paired runs; only the capacity threshold is unchecked
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{../../rq2/figures/phaseA_legendre_grid/heatmap_S1e+05.png}
+    \caption{$\Delta C$ over the $(e_1, e_2)$ plane at $S = 10^5$ ($\lambda^* = 0.8$, $p^* = 0.7$). Left: absolute
+    coefficients $(b_1, b_2)$, the outer points are the boundary of $\mathcal{F}$; right: normalised disc
+    $(\text{frac}\cos\theta, \text{frac}\sin\theta)$. Star: best point, $\Delta C = 1.94 \pm 0.09$ at
+    $b = (0.265, -0.071)$. Heat maps for $S = 10^4, 10^6$ in the same folder.}
+\end{figure}
+
+\subsubsection*{3. Best shapes are ramps between the extremes}
+New plotting options (\texttt{rq2/plot\_shapes.py}):
+\begin{itemize}
+    \item \texttt{--best CONFIG}: for every $S$ the best grid point $b$ (as in \texttt{legendre\_map.py}); left the
+    direction $g(u)$ with $c = b / \norm{b}$, right $f(u) = p^*_S + a\, g(u)$ $\to$
+    \texttt{best\_<grid>.png}, and the mirror point $(-b_1, b_2)$ $\to$ \texttt{best\_<grid>\_mirror.png}
+    \item \texttt{--fixed CONFIG SHAPE FRAC}: one shape of a job file at fixed frac, one curve per $S$, with its
+    $\Delta C$ (e.g.\ \texttt{linear\_frac+1\_phaseA\_linquad.png})
+    \item \texttt{rq2/legendre\_map.py}: axes of the left panel renamed to $(b_1, b_2)$
+\end{itemize}
+Observation: the best responses are (nearly) monotone in $u$ and try to span $[0, 1]$: one end of the input range
+gives low, the other high reset (the sign of $b_1$ is free by the mirror symmetry).
+\begin{center}
+\begin{tabular}{llll}
+    \hline
+    $S$ & $p^*_S$ & best: $f(-1) \to f(+1)$, range & linear, frac $= \pm 1$: $f(-1) \to f(+1)$, range \\
+    \hline
+    $10^4$ & 0.8 & $0.21 \to 0.89$ (max $1.0$), $0.79$ & $0.6 \to 1.0$, $0.4$ \\
+    $10^5$ & 0.7 & $0.08 \to 1.0$, $0.92$ & $0.4 \to 1.0$, $0.6$ \\
+    $10^6$ & 0.25 & $0.76 \to 0.0$, $0.76$ & $0.5 \to 0.0$, $0.5$ \\
+    \hline
+\end{tabular}
+\end{center}
+\begin{itemize}
+    \item with $\langle p_t \rangle = p^*_S \neq \tfrac{1}{2}$ a \emph{straight} ramp cannot reach both 0 and 1: it
+    hits the nearer boundary first and uses only part of the range (linear: std $0.115 / 0.173 / 0.144$,
+    $\Delta C = 0.85 / 1.54 / 0.72$)
+    \item the $e_2$ part bends the ramp (concave for large $p^*$, convex for small $p^*$) so that it covers much more
+    of $[0, 1]$ at the same mean: std $0.224 / 0.274 / 0.228$, $\Delta C = 1.20 / 1.94 / 1.12$, i.e.\ higher by
+    $\approx 0.4$ at every $S$
+    \item $\to$ the $e_2$ tilt is mainly a way to fit a longer ramp into $[0, 1]$, not an independent ``magnitude''
+    response (interpretation)
+    \item proposed rule for phase B: \emph{map the input monotonically onto the full reset range, low $u$ $\to$ one
+    extreme, high $u$ $\to$ the other, at mean $p^*_S$}
+    \item limit: the step $p_t = \Theta(\pm(u_t - u_0))$ with $P(\pm(u - u_0) > 0) = p^*_S$, which saturates
+    $\operatorname{Var}(p_t) = p^*(1 - p^*)$
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{../../rq2/figures/shapes/best_phaseA_legendre_grid.png}
+    \includegraphics[width=0.9\linewidth]{../../rq2/figures/shapes/best_phaseA_legendre_grid_mirror.png}
+    \caption{Best grid point per $S$ (top) and its mirror $(-b_1, b_2)$, i.e.\ $f(-u)$ (bottom). Left: direction
+    $g(u)$; right: response $f(u)$ with $p^*_S$ dashed and the allowed range $[0, 1]$ shaded.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{../../rq2/figures/shapes/linear_frac+1_phaseA_linquad.png}
+    \caption{Linear response at frac $= +1$ (\texttt{phaseA\_linquad}), one curve per $S$: the straight ramp hits
+    the nearer boundary and covers only part of $[0, 1]$.}
+\end{figure}
+
+\textbf{Open questions / next steps:}
+\begin{itemize}
+    \item response spectrum: gradient $g_n = \partial \Delta C / \partial b_n$ and curvature $K_{nm}$ at $b = 0$ from
+    the small-frac points ($\pm 0.05, \pm 0.1$): paired finite differences / quadratic fit per direction, then a fit
+    over $\theta$
+    \item shuffled-$p$ control: $p_t$ with the same distribution as $f(u_t)$ but independent of $u_t$ $\to$ gain from
+    input dependence or from modulation itself?
+    \item $\varepsilon$ tests: $\varepsilon \to -\varepsilon$ (check the mirror identity), $\varepsilon = 0$
+    (reset as the only input channel), larger $\varepsilon$ (does the gain shrink, as the ``second channel''
+    hypothesis predicts?)
+    \item step and full-range monotone ramps at mean $p^*_S$ (nonlinear monotone map or clipped linear ramp): does
+    $\Delta C$ keep growing with the covered range / std up to the step, or is there an optimum before?
+    \item add $S = 10^3$ and $S = \infty$ to the grid
+    \item convergence in the basis: add $e_3$, $e_4$
+    \item degree split and memory function of the best points; does the capacity threshold favour the modulated
+    reservoir?
+\end{itemize}
+\end{sloppypar}
