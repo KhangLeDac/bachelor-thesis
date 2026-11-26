@@ -98,9 +98,9 @@ of $b_1$ is free, see the mirror symmetry above).
   more of $[0,1]$ at the same mean: std $0.224/0.274/0.228$, $\Delta C$ higher by $\approx0.4$ at every
   $S$. The $e_2$ tilt is therefore mainly a way to fit a longer ramp into $[0,1]$, not an independent
   "magnitude" response.
-- Rule for phase B: *map the input monotonically onto the full reset range, low $u$ → one extreme,
-  high $u$ → the other, at mean $p^*_S$.* The limit of this is the step $p_t = \Theta(\pm(u_t - u_0))$
-  with $P(\pm(u - u_0) > 0) = p^*_S$, which saturates $\operatorname{Var}(p_t) = p^*(1-p^*)$.
+- Rule from phase A (analysis in `rq2/PLAN.md` §2): *map the input monotonically onto the full reset
+  range, low $u$ → one extreme, high $u$ → the other, at mean $p^*_S$.* The limit of this is the
+  step $p_t = \Theta(\pm(u_t - u_0))$ with $P(\pm(u - u_0) > 0) = p^*_S$, which saturates $\operatorname{Var}(p_t) = p^*(1-p^*)$.
 
 ## Why
 - Contains all earlier families; avoids optimising ad-hoc shapes one by one.
