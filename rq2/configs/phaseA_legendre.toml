@@ -1,4 +1,4 @@
-# RQ2 phase A: Legendre responses of degree 2 with different coefficient combinations around the RQ1 optimum,
+# RQ2 phase A: Legendre responses of degree 2 with different directions (c_1, c_2) around the RQ1 optimum,
 # 10 devices. f(u) = p* + a g(u), g ~ c_1 sqrt(3) P_1(u) + c_2 sqrt(5) P_2(u) (normalised to <g^2> = 1, so only the
 # direction of (c_1, c_2) matters). Pure c_1 = linear, pure c_2 = quadratic: see phaseA_linquad.toml.
 seeds  = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]          # devices (same as RQ1)

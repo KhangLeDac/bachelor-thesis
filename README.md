@@ -114,3 +114,9 @@ print(summarize(C, table))            # total, degree1..3, memory (degree-1 capa
 - Washout: `simulate` also propagates the maximally mixed state through the washout. It warns if the trace
   distance to the |0…0⟩ run is still above 1e-6 (increase `T_wash`, typically needed for small p).
   `trace_distance_curve` gives the full decay, from which a memory time can be read off.
+- Input-dependent reset (RQ2): p_t = f(u_t) = p*_S + a g(u_t) = p*_S + Σₙ bₙ eₙ(u_t), with the orthonormal
+  Legendre basis eₙ(u) = √(2n+1) Pₙ(u) for u ~ U(−1, 1) and
+  - a: signed strength, a = frac · a_max(θ, ±) = ±std(p_t) (`Reset.a`, `Reset.from_fraction`);
+  - cₙ: direction / shape coefficients, Σ cₙ² = 1, in two modes (c₁, c₂) = (cos θ, sin θ) (`coefs` in the job files);
+  - bₙ = a cₙ: absolute coefficients of p − p*_S, ‖b‖ = |a| = std(p_t) (axes of `rq2/legendre_map.py`).
+  The symbol aₙ is not used, to avoid confusion with the strength a.

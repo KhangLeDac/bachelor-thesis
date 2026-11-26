@@ -13,6 +13,9 @@ Entries are living: they are revised as an idea develops, and superseded rather 
 - One file per idea, kebab-case slug: `legendre-basis-g.md`.
 - Markdown with `$…$` / `$$…$$` math. Notation as in `README.md` and `rq*/PLAN.md`
   ($N$, $\lambda$, $p$, $p_t = f(u_t)$, $S$, $\Delta C$, $u \sim \mathcal U(-1,1)$).
+- Reset response: $f(u) = p^*_S + a\,g(u) = p^*_S + \sum_n b_n e_n(u)$ with strength $a$
+  ($=\pm\operatorname{std}(p_t)$), unit direction $c_n$ ($\sum c_n^2 = 1$) and absolute coefficients
+  $b_n = a\,c_n$. Never $a_n$ (see `README.md`, Conventions).
 - `status`: `open` (being discussed), `adopted` (in use / in the plan), `rejected`,
   `superseded-by: <slug>`.
 - `relates`: slugs of other ideas; links must point to existing files.

@@ -11,7 +11,11 @@ Summary:
 | `qrc/reservoir.py` | `p` may be a function; new `reset_sequence`; `Run.p_seq` | use $p_t = f(u_t)$ in the simulation |
 | `qrc/reset.py` (new) | class `Reset`: response functions $f(u) = p_0 + a\,g(u)$ | the families of phase A, centred and normalised |
 | `rq2/scan.py` (new) | job system for phase A | scan shapes and strengths around the RQ1 optimum |
-| `rq2/configs/phaseA.toml` (new) | first job file | linear and magnitude response, 6 values of $S$, 10 devices |
+| `rq2/configs/` (new) | four job files for phase A | linear, magnitude, quadratic, $P_3$ and Legendre responses around the RQ1 optimum, 10 devices |
+| `rq2/compare.py` (new) | paired $\Delta C$ table and figures | gain over the constant $p^*_S$ per $S$, shape and frac |
+| `rq2/legendre_grid.py` (new) | writes `phaseA_legendre_grid.toml` | polar grid of Legendre responses in the $(e_1, e_2)$ plane |
+| `rq2/legendre_map.py` (new) | heat maps of $\Delta C$ | gain over the $(e_1, e_2)$ plane |
+| `rq2/plot_shapes.py` (new) | plots of $g(u)$ and $f(u)$ | check the shapes by eye |
 | `tests/` | 4 + 1 + 23 new tests | constant $f$ reproduces RQ1 exactly, shapes are normalised, range checks |
 
 Unchanged: the physics of one step (`measure_reset_spin`), the features and shot covariance, and
@@ -72,8 +76,8 @@ $p_t$, so it still measures whether the initial state is forgotten.
 **Paired comparison:** runs with different `p` but the same `input_seed` (default 0) use the identical
 input sequence. Differences $C[f] - C[p^*]$ are therefore not blurred by different inputs.
 
-**`trace_distance_curve(params, lam, p, u)`:** the same change, so the memory time of RQ1
-(`rq1/memory.py`) can also be computed for an input-dependent reset.
+**`trace_distance_curve(params, lam, p, u)`:** the same change, so the memory time of RQ1 can
+also be computed for an input-dependent reset.
 
 **`Run`:** new field `p_seq` (shape $(T_{wash}+M,)$, aligned with `u`). `Run.p` holds what was passed
 (number or function).
@@ -100,7 +104,7 @@ $$
 | `magnitude` | $\lvert u\rvert$ | $\sqrt{12}\,(\lvert u\rvert - \tfrac12)$ | – |
 | `quadratic` | $u^2$ | $\sqrt{45/4}\,(u^2 - \tfrac13)$ | – |
 | `sigmoid` | $1/(1+e^{-k(\lvert u\rvert - u_0)})$ | numerically | `k`, `u0` |
-| `legendre` | $\sum_n c_n \sqrt{2n+1}\,P_n(u)$ | numerically | `coefs` $= [c_1, c_2, \ldots]$ |
+| `legendre` | $\sum_n c_n \sqrt{2n+1}\,P_n(u)$ | numerically | `coefs` $= [c_1, c_2, \ldots]$ (direction, any scale) |
 
 **How mean and std are computed:** Gauss–Legendre quadrature with 200 nodes on $[-1, 0]$ and on
 $[0, 1]$ separately (exact for polynomials and for $\lvert u\rvert$, whose kink is at 0).
@@ -130,7 +134,7 @@ f = Reset.from_fraction("magnitude", p0=0.8, frac=0.5)   # p = 0.8 + a sqrt(12)(
 run = simulate(params, lam=1.0, p=f, M=50000)            # run.p_seq[t] = f(run.u[t])
 ```
 
-## 5. `rq2/scan.py` and `rq2/configs/phaseA.toml` (new): phase A scan
+## 5. `rq2/scan.py` and `rq2/configs/` (new): phase A scan
 
 Same job system as `rq1/map.py` (TOML job file, one file per job, restartable, parallel, see diary
 18.11). Differences:
@@ -147,23 +151,51 @@ Same job system as `rq1/map.py` (TOML job file, one file per job, restartable, p
   total IPC, capacity per degree (1–3), memory function, washout distance, warnings, commit, runtime.
   File name: `S1e+04_magnitude_frac+0.50_seed3.npz`.
 
-`phaseA.toml`: $S \in \{10^2, \ldots, 10^6, \infty\}$ with the RQ1 optima as baseline, shapes `linear`
-and `magnitude`, frac $\in \{\pm0.25, \pm0.5, \pm0.75, \pm1\}$, 10 devices, $M = 50000$, delays
-$(20, 10, 7)$ (degrees 1–3, as in RQ1) → 1020 jobs (about the size of the RQ1 map).
+**Job files** (all: 10 devices, $M = 50000$, $T_{wash} = 1000$, delays $(20, 10, 7)$ (degrees 1–3, as
+in RQ1), the RQ1 optima as baseline; baselines and status in [PLAN.md](PLAN.md) §2):
+
+| job file | shapes | $S$ | frac | jobs |
+|---|---|---|---|---|
+| `phaseA.toml` | `linear`, `magnitude`, `legendre` $P_3$ (`coefs = [0, 0, 1]`) | $10^2, \ldots, 10^6, \infty$ | $\pm0.25, \pm0.5, \pm0.75, \pm1$ | 1500 |
+| `phaseA_linquad.toml` | `linear`, `quadratic` | $10^2, \ldots, 10^6, \infty$ | as above | 1020 |
+| `phaseA_legendre.toml` | `legendre` $(c_1, c_2) = (1/\sqrt2, 1/\sqrt2)$ (name `P1+P2`) | $10^2, \ldots, 10^6, \infty$ | as above | 540 |
+| `phaseA_legendre_grid.toml` | `legendre` $(c_1, c_2) = (\cos\theta, \sin\theta)$, $\theta = 0°, 15°, \ldots, 165°$ | $10^4, 10^5, 10^6$ | $\pm0.05, \pm0.1$ and as above | 4350 |
+
+Results go to `rq2/results/<job file name>/`.
 
 ```bash
-uv run python rq2/scan.py --config rq2/configs/phaseA.toml --dry-run
-nohup uv run python rq2/scan.py --config rq2/configs/phaseA.toml > rq2/logs/phaseA.log 2>&1 &
+uv run python rq2/scan.py --config rq2/configs/phaseA_linquad.toml --dry-run
+nohup uv run python rq2/scan.py --config rq2/configs/phaseA_linquad.toml > rq2/logs/phaseA_linquad.log 2>&1 &
 ```
 
 **Caveat:** for $S = 10^2, 10^3$ the RQ1 optimum lies at the edge of the RQ1 grid ($\lambda = 1$,
 $p = 0.95$). There $a_{\max}$ is small (the reset cannot go much above 0.95), so phase A can only test
 weak responses at small $S$.
 
-Not implemented yet: `rq2/analyze.py` ($\Delta C$ vs. frac per shape and $S$, degree split and memory
-function of the best $f$); it is easier to design once the first results exist.
+## 6. Analysis scripts (new)
 
-## 6. Tests
+**`rq2/compare.py --config <job file>`:** reads the results of a job file (also partial ones) and
+compares every $(S, \text{shape}, \text{frac})$ with the constant run (frac $= 0$) on the same device:
+$\Delta C$ = mean over devices of $C[f] - C[p^*_S]$, error = std / $\sqrt{n}$. Per row also the number
+of devices with $\Delta C > 0$, the worst and best device, and the two-sided sign test (10/10 → 0.002).
+Only devices with both runs are used. Figures in `rq2/figures/<job file name>/`: `ipc_vs_S.png`,
+`gain_vs_frac_<shape>.png`, `degree_split.png`, `gain_vs_S_frac<frac>.png` (`--frac`, default 1). The
+best frac is picked on the same data it is reported on.
+
+**`rq2/legendre_grid.py`:** writes `rq2/configs/phaseA_legendre_grid.toml` (`--step` in degrees,
+`--fracs`, `--S`, `--seeds`, …) and prints the number of jobs and a runtime estimate. A negative frac is
+the direction $\theta + 180°$, so $\theta \in [0°, 180°)$ with frac $\in [-1, 1]$ covers the whole valid
+region once.
+
+**`rq2/legendre_map.py --config rq2/configs/phaseA_legendre_grid.toml`:** for every $S$ one figure
+`heatmap_S<S>.png` with $\Delta C$ (paired, as in `compare.py`) interpolated between the grid points;
+left in absolute coefficients $(b_1, b_2) = a\,(c_1, c_2) = a(\cos\theta, \sin\theta)$, right on the normalised disk
+$(\text{frac}\cos\theta, \text{frac}\sin\theta)$. `--shared`: same colour scale for every $S$.
+
+**`rq2/plot_shapes.py`:** saves `rq2/figures/shapes/all_shapes.png` (all $g(u)$) and `f_<kind>.png`
+($f(u)$ for frac $= \pm0.5, \pm1$).
+
+## 7. Tests
 
 | test | checks |
 |---|---|

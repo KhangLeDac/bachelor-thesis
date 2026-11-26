@@ -38,47 +38,82 @@ Plan in three phases:
 
 ## 1. Code changes (before phase A)
 
-**Done**, details in [IMPLEMENTATION.md](IMPLEMENTATION.md):
+**Done**, details in [PHASE_A.md](PHASE_A.md):
 
 | file | content | status |
 |---|---|---|
 | `qrc/channel.py` | `check_strengths` accepts arrays | done |
 | `qrc/reservoir.py` | `simulate` / `trace_distance_curve` take a constant `p` or a function $f$; `Run.p_seq` | done |
-| `qrc/reset.py` | `Reset`: $f(u) = p_0 + a\,g(u)$ with $\langle g\rangle = 0$, $\langle g^2\rangle = 1$, so $a$ = std of $p_t$ (the TOML cannot hold Python code, and lambdas cannot be sent to worker processes) | done |
-| `rq2/scan.py` | job system as in `rq1/map.py`: one job = one (baseline $S$, shape, frac, device), saved to its own `.npz` | done |
-| `rq2/configs/phaseA.toml` | first job file: linear and magnitude, RQ1 optima as baseline | done |
-| `rq2/analyze.py` | $\Delta C$ vs parameters, degree split and memory function of the best $f$ | after first results |
+| `qrc/reset.py` | `Reset`: $f(u) = p_0 + a\,g(u)$ with $\langle g\rangle = 0$, $\langle g^2\rangle = 1$, so $a$ = std of $p_t$ (the TOML cannot hold Python code, and lambdas cannot be sent to worker processes). Shapes `constant`, `linear`, `magnitude`, `quadratic`, `sigmoid` ($k$, $u_0$), `legendre` (`coefs` = direction $c_1, c_2, \ldots$ in the basis $e_n = \sqrt{2n+1}\,P_n$, any scale). `Reset.from_fraction`: $a = \text{frac}\cdot a_{\max}$, $\text{frac} \in [-1, 1]$ | done |
+| `rq2/scan.py` | job system as in `rq1/map.py`: one job = one (baseline $S$, shape, frac, device), saved to its own `.npz` (total IPC, degree split, memory function, mean and std of $p_t$, washout distance); frac $= 0$ (constant $p^*_S$) always runs | done |
+| `rq2/configs/` | job files `phaseA.toml`, `phaseA_linquad.toml`, `phaseA_legendre.toml`, `phaseA_legendre_grid.toml` (see §2) | done |
+| `rq2/compare.py` | paired $\Delta C$ per $S$, shape and frac (sem over devices, devices with $\Delta C > 0$, worst/best device, sign test); figures IPC vs $S$, $\Delta C$ vs frac, $\Delta C$ vs $S$, degree split at the best frac | done |
+| `rq2/legendre_grid.py` | writes `phaseA_legendre_grid.toml` (polar grid in the $(e_1, e_2)$ plane) | done |
+| `rq2/legendre_map.py` | heat maps of $\Delta C$ over the $(e_1, e_2)$ plane, one per $S$ | done |
+| `rq2/plot_shapes.py` | plots of all shapes $g(u)$ and $f(u)$ | done |
 
 ## 2. Phase A: fixed response functions
 
-All families written around the baseline $p^*_S$ with one strength parameter $a$ (and possibly a shape
-parameter); $a = 0$ is the RQ1 baseline.
+All families are written around the baseline $p^*_S$ as $f(u) = p^*_S + a\,g(u)$ with
+$\langle g\rangle = 0$, $\langle g^2\rangle = 1$; $a$ is the std of $p_t$, $a = 0$ is the RQ1 baseline.
+The strength is set by $a = \text{frac}\cdot a_{\max}$: $\text{frac} = \pm 1$ is the edge of the
+allowed range ($p$ touches 0 or 1).
 
-| family | $f(u)$ | mean over $u$ | idea |
+| family | $g(u)$ | idea | run in |
 |---|---|---|---|
-| linear (odd) | $p^*_S + a\,u$ | $p^*_S$ | reset depends on the sign of the input |
-| magnitude (even) | $p^*_S + a\,(\lvert u\rvert - \tfrac12)$ | $p^*_S$ | reset depends on the size of the input |
-| quadratic (even) | $p^*_S + a\,(u^2 - \tfrac13)$ | $p^*_S$ | smooth version of the magnitude rule |
-| step / sigmoid | $p^*_S + a\,\big(\sigma(k(\lvert u\rvert - u_0)) - c\big)$ | $p^*_S$ ($c$ chosen) | on/off reset above a threshold |
-| Legendre expansion | $p^*_S + \sum_{n\ge1} a_n \sqrt{2n+1}\,P_n(u)$ | $p^*_S$ | general: contains the families above |
+| linear (odd) | $\sqrt{3}\,u$ | reset depends on the sign of the input | `phaseA`, `phaseA_linquad` |
+| magnitude (even) | $\sqrt{12}\,(\lvert u\rvert - \tfrac12)$ | reset depends on the size of the input | `phaseA` |
+| quadratic (even) | $\tfrac{3\sqrt5}{2}\,(u^2 - \tfrac13)$ | smooth version of the magnitude rule | `phaseA_linquad` |
+| $P_3$ (odd) | $\sqrt{7}\,P_3(u)$ | odd response of order 3 | `phaseA` |
+| sigmoid | $\sigma(k(\lvert u\rvert - u_0))$, centred and normalised | on/off reset above a threshold | not run |
+| Legendre | $\sum_{n\ge1} c_n e_n(u)$, $e_n = \sqrt{2n+1}\,P_n$, $\sum_n c_n^2 = 1$ | general: contains the families above | `phaseA_legendre`, `phaseA_legendre_grid` |
 
-The Legendre form is the systematic one: $P_n$ with $n \ge 1$ has zero mean, so every coefficient
-$a_n$ keeps $\langle p \rangle = p^*_S$; odd $n$ are "sign" responses, even $n$ "magnitude"
-responses ($\lvert u\rvert - \frac12$ is mostly $P_2$). It uses the same basis as the IPC targets.
+The Legendre form is the systematic one: $P_n$ with $n \ge 1$ has zero mean, so every term $b_n e_n$ keeps
+$\langle p \rangle = p^*_S$; odd $n$ are "sign" responses, even $n$ "magnitude" responses
+($\lvert u\rvert - \frac12$ is mostly $P_2$). It uses the same basis as the IPC targets. With $n \le 2$,
+$g$ is normalised, so only the direction of $(c_1, c_2)$ matters:
+$(c_1, c_2) = (\cos\theta, \sin\theta)$, $\theta \in [0, \pi)$; the other half circle is the sign of
+frac. $\theta = 0$ is linear, $\theta = \pi/2$ quadratic. In absolute coefficients
+$p(u) = p^*_S + \sum_n b_n e_n(u)$ with $b_n = a\,c_n$ and $\lVert b\rVert = \lvert a\rvert = \operatorname{std}(p_t)$. See
+[legendre-basis-g](../report/ideas/legendre-basis-g.md).
 
-**Scan (first job file):**
-- $S \in \{10^2, 10^3, 10^4, 10^5, \infty\}$, $\lambda = \lambda^*_S$, devices: seeds 0–9.
-- linear and magnitude: $a$ on a grid over the full allowed range (both signs).
-- record: total IPC, degree split, memory function, and the mean and spread of $p_t$.
+**Common settings:** $\lambda = \lambda^*_S$, devices: seeds 0–9, $M = 50000$, $T_\text{wash} = 1000$,
+`delays = (20, 10, 7)`, one input sequence for all jobs. Baselines (RQ1 optimum, `rq1/results/map`):
+
+| $S$ | $10^2$ | $10^3$ | $10^4$ | $10^5$ | $10^6$ | $\infty$ |
+|---|---|---|---|---|---|---|
+| $(\lambda^*_S, p^*_S)$ | (1.0, 0.95) | (1.0, 0.95) | (1.0, 0.80) | (0.8, 0.70) | (0.4, 0.25) | (0.7, 0.85) |
+
+$S \le 10^3$ sit at the grid edge ($p^*_S = 0.95$): only weak responses fit below $p = 1$.
+
+**Job files:**
+
+| job file | shapes | $S$ | frac | status |
+|---|---|---|---|---|
+| `phaseA.toml` | linear, magnitude, $P_3$ | all 6 | $\pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run |
+| `phaseA_linquad.toml` | linear, quadratic | all 6 | $\pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run |
+| `phaseA_legendre.toml` | Legendre $\theta = \pi/4$: $(c_1, c_2) = (1/\sqrt2, 1/\sqrt2)$ | all 6 | $\pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run |
+| `phaseA_legendre_grid.toml` | Legendre, $\theta = 0°, 15°, \ldots, 165°$ (12 directions) | $10^4, 10^5, 10^6$ | $\pm 0.05, \pm 0.1, \pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run, heat maps made, not yet discussed |
+
+**First results** (linear response, `phaseA_linquad`; details in the diary, entry 25.11,
+[implementation.tex](../report/diary/content/implementation.tex), `sec:rq2-phaseA-results`):
+- gain $\Delta C > 0$ for every finite $S$, largest at $S = 10^5$: $\Delta C = 1.54 \pm 0.12$ at
+  frac $= -1$;
+- small loss at $S = \infty$: $\Delta C = -0.07 \pm 0.01$;
+- the gain is roughly symmetric in frac and grows with $\lvert\text{frac}\rvert$, so the best frac is at
+  the edge $\pm 1$.
 
 **Results to look at:**
-- $\Delta C(a)$ for each family and $S$: is there a gain, for which sign of $a$, and does it grow or
-  shrink with $S$?
-- **Response spectrum:** the slope $\partial C / \partial a_n$ at $a = 0$ for $n = 1, 2, 3, \ldots$
-  Which kinds of response help at all, before optimising shapes.
+- $\Delta C(\text{frac})$ for each family and $S$: is there a gain, for which sign of $a$, and does it
+  grow or shrink with $S$? (`rq2/compare.py`; done for `phaseA`, `phaseA_linquad`, `phaseA_legendre`)
+- **Response spectrum:** which directions in the $(e_1, e_2)$ plane help ($\partial\Delta C/\partial b_n$ at
+  $b = 0$ and $\Delta C(b_1, b_2)$), before optimising shapes
+  (`rq2/legendre_map.py` on `phaseA_legendre_grid`; heat maps made, interpretation open).
 - Degree split and memory function of the best $f$: does the gain come from more memory (degree 1 at
-  larger delays) or more nonlinearity (degrees ≥ 2)?
-- Regret between devices: is the best $a$ the same for every device?
+  larger delays) or more nonlinearity (degrees ≥ 2)? Degree split in `rq2/compare.py`; memory function
+  saved but not yet plotted.
+- Regret between devices: is the best $a$ the same for every device? (`rq2/compare.py` gives the
+  per-device spread of $\Delta C$ and the sign test, not yet the best $a$ per device.)
 
 ## 3. Phase B: from functions to a behaviour
 
@@ -113,11 +148,11 @@ ambitious:
    *outcome of a single shot*, the outcome-averaged $\rho$ can no longer be propagated, and trajectories
    must be simulated, which is much more expensive. Depending on the outcome *averaged* over $S$ shots
    (i.e. on $\hat x_t$) keeps the current simulation approximately valid.
-3. **Adaptive parameters.** Keep a family (e.g. the Legendre coefficients $a_n$) and adapt them online
+3. **Adaptive parameters.** Keep a family (e.g. the Legendre coefficients $b_n$) and adapt them online
    with a gradient step on a task-independent proxy of the capacity that can be estimated from the
    features alone, e.g. $\operatorname{Tr}\big((G + V/S)^{-1} G\big)$ or the expressive capacity /
    eigentasks of "Tackling sampling noise …":
-   $$a \leftarrow a + \eta\, \nabla_a\, \widehat{\text{proxy}}.$$
+   $$b \leftarrow b + \eta\, \nabla_b\, \widehat{\text{proxy}}.$$
    This is the version that does not need a hand-picked $f$ at all.
 
 Phase B decides which of these is worth building: if the good responses depend only on $u_t$, option 1

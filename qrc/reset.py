@@ -7,13 +7,15 @@ Every response function has the form
 where g is a fixed *shape* and a the *strength*. Because g has zero mean, the average reset strength is
 <p_t> = p0 for every a (fair comparison with the constant baseline p0), and because g has unit variance,
 a is the standard deviation of p_t, so strengths of different shapes are directly comparable.
+For legendre, only the direction of `coefs` (c_1, c_2, ...) matters; the absolute coefficients of
+p - p0 in the basis e_n are b_n = a c_n / |c|.
 
 Shapes (raw shape h, centred and normalised numerically to g):
     linear      h = u                                   odd: reset depends on the sign of u
     magnitude   h = |u|                                 even: reset depends on the size of u
     quadratic   h = u^2                                 even, smooth
     sigmoid     h = 1 / (1 + exp(-k (|u| - u0)))        even, switch at |u| = u0 (parameters k, u0)
-    legendre    h = sum_n c_n sqrt(2n+1) P_n(u)         general (coefficients c_1, c_2, ...)
+    legendre    h = sum_n c_n e_n(u)                    general, e_n = sqrt(2n+1) P_n (direction c_1, c_2, ...)
 
 f must stay in [0, 1] on [-1, 1]. ``a_max`` gives the largest allowed |a| for each sign, and
 ``Reset.from_fraction`` picks a = frac * a_max, so frac in [-1, 1] is always valid.
@@ -44,7 +46,7 @@ def _raw_shape(kind: str, u: np.ndarray, shape: dict) -> np.ndarray:
     if kind == "sigmoid":
         return 1.0 / (1.0 + np.exp(-shape["k"] * (np.abs(u) - shape["u0"])))
     if kind == "legendre":
-        c = np.asarray(shape["coefs"], dtype=float)                  # c_1, c_2, ... (no constant term)
+        c = np.asarray(shape["coefs"], dtype=float)                  # direction c_1, c_2, ... (no constant term)
         coef = np.concatenate([[0.0], c * np.sqrt(2 * np.arange(1, len(c) + 1) + 1)])
         return legendre.legval(u, coef)
     raise ValueError(f"unknown shape {kind!r}; known: {SHAPES}")
