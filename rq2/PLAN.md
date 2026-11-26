@@ -9,8 +9,8 @@ Plan in three phases:
 
 | phase | question | output |
 |---|---|---|
-| A | which fixed functions $f(u)$ beat the constant $p^*_S$, and by how much? | $\Delta C$ per function family, $S$, device |
-| B | what is the common behaviour of the good functions? | a qualitative rule ("reset more when …") |
+| A | which memoryless functions $f(u_t)$ beat the constant $p^*_S$, and what behaviour do they share? | $\Delta C$ per function family, $S$, device; a qualitative rule ("reset more when …") |
+| B | does the reset gain from input memory, $p_t = f(u_t, u_{t-1}, \ldots)$? | $\Delta C$ of memory shapes vs memoryless ones; which past inputs matter |
 | C | can that behaviour be produced by a rule that adapts by itself? | a control rule (ODE / feedback / adaptive) |
 
 ---
@@ -70,8 +70,8 @@ allowed range ($p$ touches 0 or 1).
 
 The Legendre form is the systematic one: $P_n$ with $n \ge 1$ has zero mean, so every term $b_n e_n$ keeps
 $\langle p \rangle = p^*_S$; odd $n$ are "sign" responses, even $n$ "magnitude" responses
-($\lvert u\rvert - \frac12$ is mostly $P_2$). It uses the same basis as the IPC targets. With $n \le 2$,
-$g$ is normalised, so only the direction of $(c_1, c_2)$ matters:
+($\lvert u\rvert - \frac12$ is mostly $P_2$). It uses the same basis as the IPC targets. $g$ is
+normalised, so only the direction $c$ matters; for $n \le 2$:
 $(c_1, c_2) = (\cos\theta, \sin\theta)$, $\theta \in [0, \pi)$; the other half circle is the sign of
 frac. $\theta = 0$ is linear, $\theta = \pi/2$ quadratic. In absolute coefficients
 $p(u) = p^*_S + \sum_n b_n e_n(u)$ with $b_n = a\,c_n$ and $\lVert b\rVert = \lvert a\rvert = \operatorname{std}(p_t)$. See
@@ -93,7 +93,7 @@ $S \le 10^3$ sit at the grid edge ($p^*_S = 0.95$): only weak responses fit belo
 | `phaseA.toml` | linear, magnitude, $P_3$ | all 6 | $\pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run |
 | `phaseA_linquad.toml` | linear, quadratic | all 6 | $\pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run |
 | `phaseA_legendre.toml` | Legendre $\theta = \pi/4$: $(c_1, c_2) = (1/\sqrt2, 1/\sqrt2)$ | all 6 | $\pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run |
-| `phaseA_legendre_grid.toml` | Legendre, $\theta = 0°, 15°, \ldots, 165°$ (12 directions) | $10^4, 10^5, 10^6$ | $\pm 0.05, \pm 0.1, \pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run, heat maps made, not yet discussed |
+| `phaseA_legendre_grid.toml` | Legendre, $\theta = 0°, 15°, \ldots, 165°$ (12 directions) | $10^4, 10^5, 10^6$ | $\pm 0.05, \pm 0.1, \pm 0.25, \pm 0.5, \pm 0.75, \pm 1$ | run, evaluated 26.11 |
 
 **First results** (linear response, `phaseA_linquad`; details in the diary, entry 25.11,
 [implementation.tex](../report/diary/content/implementation.tex), `sec:rq2-phaseA-results`):
@@ -108,29 +108,65 @@ $S \le 10^3$ sit at the grid edge ($p^*_S = 0.95$): only weak responses fit belo
   grow or shrink with $S$? (`rq2/compare.py`; done for `phaseA`, `phaseA_linquad`, `phaseA_legendre`)
 - **Response spectrum:** which directions in the $(e_1, e_2)$ plane help ($\partial\Delta C/\partial b_n$ at
   $b = 0$ and $\Delta C(b_1, b_2)$), before optimising shapes
-  (`rq2/legendre_map.py` on `phaseA_legendre_grid`; heat maps made, interpretation open).
+  (`rq2/legendre_map.py` on `phaseA_legendre_grid`; evaluated 26.11, see the analysis below).
 - Degree split and memory function of the best $f$: does the gain come from more memory (degree 1 at
   larger delays) or more nonlinearity (degrees ≥ 2)? Degree split in `rq2/compare.py`; memory function
   saved but not yet plotted.
 - Regret between devices: is the best $a$ the same for every device? (`rq2/compare.py` gives the
   per-device spread of $\Delta C$ and the sign test, not yet the best $a$ per device.)
 
-## 3. Phase B: from functions to a behaviour
+### Analysis: from functions to a behaviour
 
 Goal: one sentence like *"reset strongly after large inputs, weakly after small ones, and more so at
-small $S$"*. Questions to answer from phase A:
+small $S$"*. Questions, with the answers from the Legendre grid (26.11, $S = 10^4$–$10^6$; details in
+[legendre-basis-g](../report/ideas/legendre-basis-g.md) and the diary, entry 26.11,
+`sec:rq2-optimal-shapes`):
 
-1. Odd or even response? (sign of $u$ vs size of $u$)
-2. Direction: more reset for large $\lvert u\rvert$ or for small?
-3. How does the optimal response depend on $S$, i.e. on the noise level?
+1. Odd or even response? **Answered:** mostly odd ($e_1$). The $e_2$ part bends the ramp so that it fits
+   into $[0, 1]$ at mean $p^*_S$; it is not an independent magnitude response.
+2. Direction: more reset for large $\lvert u\rvert$ or for small? **Answered:** neither. The best shapes
+   are monotone ramps between the extremes, low $u$ → one end of $[0, 1]$, high $u$ → the other. The
+   sign of $b_1$ is free ($\Delta C$ nearly unchanged under $b_1 \to -b_1$). The optimum lies on the
+   boundary of the allowed region ($\lvert\text{frac}\rvert = 1$).
+3. How does the optimal response depend on $S$? **Partly answered:** $\Delta C$ is essentially never
+   negative for $S = 10^4$–$10^6$; the sign of $b_2$ follows $p^*_S$; small loss at $S = \infty$
+   (linear, $-0.07 \pm 0.01$). Open: $S \le 10^3$ and $S = \infty$ on the grid.
 4. Is it the same for every device? If not, which device property predicts it (memory time from
-   `rq1/memory`, degree split at the baseline)?
+   `rq1/memory`, degree split at the baseline)? Open.
 
 Possible mechanisms to test against the data:
 - the reset multiplies the stored state by $(1-p_t)$, so an input-dependent $p_t$ multiplies past memory
   by a function of $u_t$ → creates products of the current and past inputs (higher degrees);
 - a strong reset after an "informative" input clears old information to make room, a weak reset keeps
   it longer → trade-off between memory and nonlinearity that the reservoir can adapt to.
+
+## 3. Phase B: reset with input memory
+
+Details in [PHASE_B.md](PHASE_B.md).
+
+**Question.** Does the reset gain from depending on past inputs as well,
+$p_t = f(u_t, u_{t-1}, \ldots, u_{t-d})$, compared with the memoryless $f(u_t)$ of phase A?
+
+- **Function space:** Legendre product basis $\phi_{\mathbf n} = \prod_k e_{n_k}(u_{t-k})$, orthonormal
+  for i.i.d. inputs. Same notation as phase A: $p_t = p^*_S + a\,g = p^*_S + \sum_{\mathbf n \ne 0}
+  b_{\mathbf n}\phi_{\mathbf n}$, $b = a\,c$, $\lVert c\rVert = 1$, $\lVert b\rVert = \lvert a\rvert =
+  \operatorname{std}(p_t)$, $\langle p_t\rangle = p^*_S$. Phase A is the subspace $n_1 = \ldots = n_d = 0$.
+  Scope: degree $\le 2$, $d \le 1$.
+- **Baseline shape:** $\Delta u = u_t - u_{t-1}$, $g = \tfrac{1}{\sqrt2}\big(e_1(u_t) - e_1(u_{t-1})\big)$;
+  $\lvert\Delta u\rvert$ compared alongside.
+- **Reference:** the constant $p^*_S$, paired as in phase A, at full range frac $= \pm 1$;
+  $\operatorname{std}(p_t)$ is reported next to every $\Delta C$ (memory shapes have a smaller allowed
+  std).
+- **First search space:** $\{e_1(u_t), e_2(u_t), e_1(u_{t-1}), e_2(u_{t-1})\}$.
+
+**Steps:**
+
+| step | content | status |
+|---|---|---|
+| 1 | lagged response in `qrc/reset.py`, lag matrix in `qrc/reservoir.py`, job-file format, tests | to do |
+| 2 | $\Delta u$ and $\lvert\Delta u\rvert$, $S = 10^4, 10^5, 10^6$, 10 devices, vs linear | to do |
+| 3 | choose search space and strategy from step 2 | to do |
+| 4 | derive the rule (which past inputs, sign, strength) for phase C | to do |
 
 ## 4. Phase C: towards an automatic control rule
 
@@ -155,8 +191,9 @@ ambitious:
    $$b \leftarrow b + \eta\, \nabla_b\, \widehat{\text{proxy}}.$$
    This is the version that does not need a hand-picked $f$ at all.
 
-Phase B decides which of these is worth building: if the good responses depend only on $u_t$, option 1
-with $\alpha = 1$ is already enough; if they depend on the noise level or the device, options 2–3.
+Phases A and B decide which of these is worth building: if the good responses depend only on $u_t$,
+option 1 with $\alpha = 1$ is already enough; if they depend on past inputs, option 1 with $\alpha < 1$;
+if they depend on the noise level or the device, options 2–3.
 
 ## 5. Pitfalls
 
@@ -166,7 +203,7 @@ with $\alpha = 1$ is already enough; if they depend on the noise level or the de
   $f$, otherwise extend `delays`.
 - **Washout:** an input-dependent $p_t$ can have phases of weak reset → check the washout distance as in
   RQ1.
-- **Mean dissipation:** keep $\langle p\rangle = p^*_S$ in phase A; only later allow the mean to move.
+- **Mean dissipation:** keep $\langle p\rangle = p^*_S$ in phases A and B; only later allow the mean to move.
 
 ## 6. Open questions (for Tobi)
 
